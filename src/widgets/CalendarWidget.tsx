@@ -1,5 +1,5 @@
 import { memo, useState, useCallback, useMemo } from 'react'
-import { Text, Group, ActionIcon, Stack, TextInput, Badge, Modal, Select } from '@mantine/core'
+import { Text, Group, ActionIcon, Stack, TextInput, Badge, Modal } from '@mantine/core'
 import { IconChevronLeft, IconChevronRight, IconPlus, IconTrash, IconEdit } from '@tabler/icons-react'
 import type { Widget } from '../types'
 import { useStore } from '../store/useStore'
@@ -222,7 +222,7 @@ export const CalendarWidget = memo(function CalendarWidget({ widget }: Props) {
                   <IconEdit size={10} />
                 </ActionIcon>
                 <ActionIcon size="xs" variant="subtle" color="gray" onClick={() => exportICS(e)} onMouseDown={(ev) => ev.stopPropagation()} aria-label="Export as ICS">
-                  <Text size={9} fw={600}>.ics</Text>
+                  <Text size="xs" fw={600}>.ics</Text>
                 </ActionIcon>
                 <ActionIcon size="xs" variant="subtle" color="red" onClick={() => removeEvent(e.id)} onMouseDown={(ev) => ev.stopPropagation()} aria-label="Delete event">
                   <IconTrash size={10} />

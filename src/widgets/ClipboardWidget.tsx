@@ -52,12 +52,6 @@ export const ClipboardWidget = memo(function ClipboardWidget({ widget }: Props) 
     }).catch(() => {})
   }, [])
 
-  const removeEntry = useCallback((id: string) => {
-    updateWidget(widget.id, {
-      content: { ...content, entries: content.entries.filter((e) => e.id !== id) },
-    })
-  }, [widget.id, content, updateWidget])
-
   const sortedEntries = [...content.entries]
     .sort((a, b) => {
       if (a.pinned && !b.pinned) return -1

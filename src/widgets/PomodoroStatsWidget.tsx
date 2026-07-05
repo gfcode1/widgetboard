@@ -10,27 +10,6 @@ interface Props {
   widget: Widget
 }
 
-function getLast7Days(): string[] {
-  const days: string[] = []
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date()
-    d.setDate(d.getDate() - i)
-    days.push(d.toISOString().split('T')[0])
-  }
-  return days
-}
-
-function getDayLabels(): string[] {
-  const now = new Date()
-  const labels: string[] = []
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(now)
-    d.setDate(d.getDate() - i)
-    labels.push(new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(d).slice(0, 2))
-  }
-  return labels
-}
-
 export const PomodoroStatsWidget = memo(function PomodoroStatsWidget({ widget: _widget }: Props) {
   const boards = useStore((s) => s.boards)
   const currentBoardId = useStore((s) => s.currentBoardId)
@@ -55,16 +34,15 @@ export const PomodoroStatsWidget = memo(function PomodoroStatsWidget({ widget: _
     }
     return labels
   }, [now.toISOString().split('T')[0]])
-    const boardWidgets = boards[currentBoardId] ?? []
+
+  const allSessions = useMemo(() => {
+    const boardWidgets = currentBoardId ? (boards[currentBoardId] ?? []) : []
     return boardWidgets
       .filter((w): w is Widget & { content: { type: 'pomodoro'; sessions: Array<{ date: string; workMin: number; breakMin: number; completed: boolean }> } } =>
         w.content.type === 'pomodoro' && Array.isArray((w.content as { sessions?: unknown }).sessions)
       )
       .flatMap((w) => w.content.sessions)
   }, [boards, currentBoardId])
-
-  const last7 = useMemo(() => getLast7Days(), [])
-  const dayLabels = useMemo(() => getDayLabels(), [])
 
   const dayData = useMemo(() => {
     return last7.map((date) => {

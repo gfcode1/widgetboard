@@ -1,4 +1,4 @@
-import { memo, useState, useCallback, useRef, useEffect } from 'react'
+import { memo, useState, useCallback, useRef } from 'react'
 import { Text, UnstyledButton, Group, ActionIcon, Collapse } from '@mantine/core'
 import { IconHistory } from '@tabler/icons-react'
 import { evaluate } from 'mathjs'

@@ -1,7 +1,7 @@
 import { memo, useState, useCallback, useRef, useEffect } from 'react'
 import { Text, Textarea, Select, Group, Badge, TextInput } from '@mantine/core'
 import { IconNote, IconSearch } from '@tabler/icons-react'
-import type { Widget } from '../types'
+import type { Widget, NoteContent } from '../types'
 import { useStore } from '../store/useStore'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -44,7 +44,7 @@ export const NoteWidget = memo(function NoteWidget({ widget }: Props) {
       clearTimeout(debounceRef.current)
       debounceRef.current = null
     }
-    updateWidget(widget.id, { content: { ...contentRef.current, text: localText } })
+    updateWidget(widget.id, { content: { ...(contentRef.current as NoteContent), text: localText } })
   }, [widget.id, localText, updateWidget])
 
   useEffect(() => () => {
@@ -55,7 +55,7 @@ export const NoteWidget = memo(function NoteWidget({ widget }: Props) {
     setLocalText(value)
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
-      updateWidget(widget.id, { content: { ...contentRef.current, text: value } })
+      updateWidget(widget.id, { content: { ...(contentRef.current as NoteContent), text: value } })
     }, DEBOUNCE_MS)
   }, [widget.id, updateWidget])
 

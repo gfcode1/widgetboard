@@ -168,7 +168,7 @@ export function Widget({ widget, scale, isSelected, onSelect, onContextMenu, onO
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
       onSelect(widget.id, e.shiftKey)
-      listeners.onPointerDown?.(e as any)
+      listeners?.onPointerDown?.(e as any)
     },
     [widget.id, onSelect, listeners]
   )

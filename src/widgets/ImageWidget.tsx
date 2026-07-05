@@ -1,5 +1,5 @@
 import { memo, useState, useCallback, useRef, useEffect } from 'react'
-import { Text, TextInput, Button, Stack, ActionIcon, Image as MantineImage, Loader } from '@mantine/core'
+import { Text, TextInput, Button, Stack, Image as MantineImage, Loader } from '@mantine/core'
 import { IconUpload } from '@tabler/icons-react'
 import type { Widget } from '../types'
 import { useStore } from '../store/useStore'
