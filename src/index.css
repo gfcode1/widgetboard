@@ -1,0 +1,368 @@
+:root {
+  /* ── Background & Surface ─────────────────────────── */
+  --wb-bg: #0f0d17;
+  --wb-bg-gradient: radial-gradient(ellipse at 50% 40%, #1a1726 0%, #0f0d17 70%);
+  --wb-surface: rgba(28, 26, 36, 0.72);
+  --wb-surface-solid: #1c1a24;
+  --wb-surface-hover: rgba(36, 34, 48, 0.8);
+  --wb-surface-active: rgba(44, 42, 58, 0.85);
+
+  /* ── Border ───────────────────────────────────────── */
+  --wb-border: rgba(255, 255, 255, 0.06);
+  --wb-border-solid: #2a2835;
+  --wb-border-accent: rgba(139, 92, 246, 0.3);
+
+  /* ── Accent ───────────────────────────────────────── */
+  --wb-accent: #8b5cf6;
+  --wb-accent-rgb: 139, 92, 246;
+  --wb-accent-subtle: rgba(139, 92, 246, 0.08);
+  --wb-accent-hover: rgba(139, 92, 246, 0.15);
+
+  /* ── Text ─────────────────────────────────────────── */
+  --wb-text: #e4e4e7;
+  --wb-text-dimmed: #71717a;
+
+  /* ── Radius ───────────────────────────────────────── */
+  --wb-radius: 10px;
+  --wb-radius-sm: 6px;
+  --wb-radius-lg: 14px;
+
+  /* ── Shadow Elevation System ──────────────────────── */
+  --wb-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.15);
+  --wb-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.15);
+  --wb-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2);
+  --wb-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.25);
+  --wb-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.35), 0 4px 10px rgba(0, 0, 0, 0.15);
+
+  /* ── Glassmorphism ────────────────────────────────── */
+  --wb-glass-bg: rgba(22, 20, 31, 0.75);
+  --wb-glass-border: rgba(255, 255, 255, 0.06);
+  --wb-glass-blur: blur(20px) saturate(180%);
+
+  /* ── Glow ─────────────────────────────────────────── */
+  --wb-glow-accent: 0 0 12px rgba(var(--wb-accent-rgb), 0.3);
+  --wb-glow-accent-lg: 0 0 24px rgba(var(--wb-accent-rgb), 0.2), 0 0 48px rgba(var(--wb-accent-rgb), 0.08);
+
+  /* ── Animation Tokens ─────────────────────────────── */
+  --wb-transition-fast: 120ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  --wb-transition-normal: 200ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  --wb-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
+}
+
+body {
+  background: var(--wb-bg);
+  color: var(--wb-text);
+  touch-action: none;
+  font-feature-settings: 'cv11', 'cv01';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar ─────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+::selection {
+  background: rgba(var(--wb-accent-rgb), 0.3);
+}
+
+/* ── Focus Ring ────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--wb-accent);
+  outline-offset: 2px;
+  border-radius: var(--wb-radius-sm);
+}
+
+/* ── Widget Inner Scrollbar ────────────────────────── */
+.widget-scroll::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.widget-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.widget-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+
+.widget-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ── Animations ────────────────────────────────────── */
+@keyframes widget-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── Reduced Motion ────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Glass Panel Mixin (used by toolbar, breadcrumb, etc.) ── */
+.wb-glass {
+  background: var(--wb-glass-bg);
+  backdrop-filter: var(--wb-glass-blur);
+  -webkit-backdrop-filter: var(--wb-glass-blur);
+  border: 1px solid var(--wb-glass-border);
+}
+
+/* ── Widget Card ───────────────────────────────────── */
+.wb-widget-card {
+  background: var(--wb-surface);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  border: 1px solid var(--wb-border);
+  border-radius: var(--wb-radius);
+  box-shadow: var(--wb-shadow);
+  transition:
+    border-color var(--wb-transition-fast),
+    box-shadow var(--wb-transition-normal),
+    transform var(--wb-transition-fast);
+}
+
+.wb-widget-card:hover {
+  border-color: rgba(var(--wb-accent-rgb), 0.15);
+  box-shadow: var(--wb-shadow-hover), 0 0 0 1px rgba(var(--wb-accent-rgb), 0.06);
+  transform: translateY(-1px);
+}
+
+.wb-widget-card--active {
+  border-color: var(--wb-accent) !important;
+  box-shadow: 0 0 0 1px var(--wb-accent), var(--wb-shadow-md), var(--wb-glow-accent) !important;
+}
+
+.wb-widget-card--selected {
+  border-color: var(--wb-accent) !important;
+  box-shadow: 0 0 0 1px var(--wb-accent), var(--wb-shadow) !important;
+}
+
+/* ── Resize Handles ────────────────────────────────── */
+.wb-resize-handle {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--wb-transition-normal);
+  z-index: 3;
+}
+
+div:hover > .wb-resize-handle {
+  opacity: 1;
+}
+
+/* ── Agent FAB ─────────────────────────────────────── */
+.wb-agent-fab {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  z-index: 200;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(var(--wb-accent-rgb), 0.4);
+  transition: transform var(--wb-transition-fast), box-shadow var(--wb-transition-fast);
+}
+
+.wb-agent-fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 24px rgba(var(--wb-accent-rgb), 0.5);
+}
+
+.wb-agent-fab:active {
+  transform: scale(0.95);
+}
+
+/* ── Agent Panel ───────────────────────────────────── */
+.wb-agent-panel {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  z-index: 210;
+  width: 360px;
+  height: 480px;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--wb-radius-lg);
+  background: var(--wb-glass-bg);
+  backdrop-filter: var(--wb-glass-blur);
+  -webkit-backdrop-filter: var(--wb-glass-blur);
+  border: 1px solid var(--wb-glass-border);
+  box-shadow: var(--wb-shadow-xl);
+  overflow: hidden;
+  animation: agent-panel-enter 250ms var(--wb-ease-out-expo);
+}
+
+@keyframes agent-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.wb-agent-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--wb-border);
+  background: rgba(22, 20, 31, 0.5);
+  flex-shrink: 0;
+}
+
+.wb-agent-messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.wb-agent-input {
+  padding: 8px 10px;
+  border-top: 1px solid var(--wb-border);
+  flex-shrink: 0;
+}
+
+/* ── Toolbar Glass ─────────────────────────────────── */
+.wb-toolbar {
+  background: var(--wb-glass-bg);
+  backdrop-filter: var(--wb-glass-blur);
+  -webkit-backdrop-filter: var(--wb-glass-blur);
+  border: 1px solid var(--wb-glass-border);
+  box-shadow: var(--wb-shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* ── Context Menu ──────────────────────────────────── */
+.wb-context-menu {
+  background: var(--wb-glass-bg);
+  backdrop-filter: var(--wb-glass-blur);
+  -webkit-backdrop-filter: var(--wb-glass-blur);
+  border: 1px solid var(--wb-glass-border);
+  box-shadow: var(--wb-shadow-xl);
+  animation: scale-in 150ms var(--wb-ease-out-expo);
+  transform-origin: top left;
+}
+
+/* ── Command Palette ───────────────────────────────── */
+.wb-command-palette-overlay {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: fade-in 150ms ease;
+}
+
+.wb-command-palette {
+  background: var(--wb-surface-solid);
+  border: 1px solid var(--wb-border-solid);
+  box-shadow: var(--wb-shadow-xl);
+  animation: slide-up 200ms var(--wb-ease-out-expo);
+}
+
+/* ── Mobile adjustments ────────────────────────────── */
+@media (max-width: 768px) {
+  .wb-agent-panel {
+    width: calc(100vw - 24px);
+    height: 60vh;
+    bottom: 72px;
+    right: 12px;
+    left: 12px;
+  }
+
+  .wb-agent-fab {
+    bottom: 72px;
+    right: 12px;
+  }
+
+  .wb-resize-handle {
+    opacity: 0.5 !important;
+  }
+
+  div:hover > .wb-resize-handle {
+    opacity: 0.8 !important;
+  }
+}

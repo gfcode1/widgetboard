@@ -1,0 +1,313 @@
+import type { ReactNode } from 'react'
+import type { WidgetType, WidgetContent } from '../types'
+import { IconNote, IconClock, IconLink, IconPhoto, IconCloud, IconStopwatch, IconCalculator, IconSticker, IconWorld, IconLayoutDashboard, IconCheckbox, IconCalendar, IconSearch, IconFolder, IconBookmark, IconMessageCircle, IconClipboard, IconCode, IconPalette, IconWallet, IconRss, IconClock2, IconChartBar, IconTarget } from '@tabler/icons-react'
+import { v4 as uuidv4 } from 'uuid'
+
+export type WidgetCategory =
+  | 'productivity'
+  | 'time'
+  | 'media'
+  | 'utilities'
+  | 'organization'
+  | 'finance'
+  | 'data'
+
+export const CATEGORY_LABELS: Record<WidgetCategory, string> = {
+  productivity: 'Productivity',
+  time: 'Time',
+  media: 'Media',
+  utilities: 'Utilities',
+  organization: 'Organization',
+  finance: 'Finance',
+  data: 'Data',
+}
+
+export const CATEGORY_ORDER: WidgetCategory[] = [
+  'productivity',
+  'time',
+  'media',
+  'utilities',
+  'organization',
+  'finance',
+  'data',
+]
+
+export interface WidgetMeta {
+  type: WidgetType
+  label: string
+  icon: ReactNode
+  description: string
+  category: WidgetCategory
+  defaultWidth: number
+  defaultHeight: number
+  defaultContent: () => WidgetContent
+}
+
+export const WIDGET_REGISTRY: WidgetMeta[] = [
+  {
+    type: 'note',
+    label: 'Note',
+    icon: <IconNote size={20} />,
+    description: 'Testo libero con Markdown',
+    category: 'productivity',
+    defaultWidth: 300,
+    defaultHeight: 250,
+    defaultContent: () => ({ type: 'note', text: '', categories: [] }),
+  },
+  {
+    type: 'clock',
+    label: 'Clock',
+    icon: <IconClock size={20} />,
+    description: 'Orologio e data',
+    category: 'time',
+    defaultWidth: 260,
+    defaultHeight: 150,
+    defaultContent: () => ({ type: 'clock', showDate: true, showSeconds: true, use12h: false }),
+  },
+  {
+    type: 'todo',
+    label: 'Tasks',
+    icon: <IconCheckbox size={20} />,
+    description: 'Lista di cose da fare',
+    category: 'productivity',
+    defaultWidth: 280,
+    defaultHeight: 300,
+    defaultContent: () => ({ type: 'todo', items: [] }),
+  },
+  {
+    type: 'calendar',
+    label: 'Calendar',
+    icon: <IconCalendar size={20} />,
+    description: 'Calendario con eventi',
+    category: 'productivity',
+    defaultWidth: 260,
+    defaultHeight: 260,
+    defaultContent: () => ({ type: 'calendar', events: [] }),
+  },
+  {
+    type: 'search',
+    label: 'Search',
+    icon: <IconSearch size={20} />,
+    description: 'Cerca e motori personalizzati',
+    category: 'utilities',
+    defaultWidth: 280,
+    defaultHeight: 200,
+    defaultContent: () => ({
+      type: 'search',
+      engines: [
+        { name: 'Google', url: 'https://www.google.com/search?q={query}' },
+        { name: 'Bing', url: 'https://www.bing.com/search?q={query}' },
+        { name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q={query}' },
+        { name: 'GitHub', url: 'https://github.com/search?q={query}' },
+        { name: 'YouTube', url: 'https://www.youtube.com/results?search_query={query}' },
+        { name: 'Wikipedia', url: 'https://en.wikipedia.org/w/index.php?search={query}' },
+      ],
+      activeEngine: 0,
+      recentSearches: [],
+    }),
+  },
+  {
+    type: 'link',
+    label: 'Link',
+    icon: <IconLink size={20} />,
+    description: 'Segnalibro / bookmark',
+    category: 'organization',
+    defaultWidth: 300,
+    defaultHeight: 80,
+    defaultContent: () => ({ type: 'link', url: '', title: '' }),
+  },
+  {
+    type: 'image',
+    label: 'Image',
+    icon: <IconPhoto size={20} />,
+    description: 'Immagine da URL o file',
+    category: 'media',
+    defaultWidth: 300,
+    defaultHeight: 300,
+    defaultContent: () => ({ type: 'image', src: '', alt: '' }),
+  },
+  {
+    type: 'weather',
+    label: 'Weather',
+    icon: <IconCloud size={20} />,
+    description: 'Meteo multi-località',
+    category: 'utilities',
+    defaultWidth: 280,
+    defaultHeight: 200,
+    defaultContent: () => ({ type: 'weather', locations: [], activeIndex: 0 }),
+  },
+  {
+    type: 'pomodoro',
+    label: 'Pomodoro',
+    icon: <IconStopwatch size={20} />,
+    description: 'Timer produttività',
+    category: 'productivity',
+    defaultWidth: 220,
+    defaultHeight: 180,
+    defaultContent: () => ({ type: 'pomodoro', workMin: 25, breakMin: 5, sessions: [] }),
+  },
+  {
+    type: 'calc',
+    label: 'Calculator',
+    icon: <IconCalculator size={20} />,
+    description: 'Calcolatrice con cronologia',
+    category: 'utilities',
+    defaultWidth: 240,
+    defaultHeight: 320,
+    defaultContent: () => ({ type: 'calc' }),
+  },
+  {
+    type: 'sticky',
+    label: 'Sticky',
+    icon: <IconSticker size={20} />,
+    description: 'Nota rapida colorata',
+    category: 'productivity',
+    defaultWidth: 200,
+    defaultHeight: 200,
+    defaultContent: () => ({ type: 'sticky', text: '', color: '#fef3c7' }),
+  },
+  {
+    type: 'embed',
+    label: 'Embed',
+    icon: <IconLayoutDashboard size={20} />,
+    description: 'Contenuto incastonato (iframe)',
+    category: 'media',
+    defaultWidth: 400,
+    defaultHeight: 300,
+    defaultContent: () => ({ type: 'embed', url: '' }),
+  },
+  {
+    type: 'worldclock',
+    label: 'World Clock',
+    icon: <IconWorld size={20} />,
+    description: 'Orologio multi-fuso orario',
+    category: 'time',
+    defaultWidth: 300,
+    defaultHeight: 160,
+    defaultContent: () => ({
+      type: 'worldclock',
+      clocks: [
+        { city: 'New York', timezone: 'America/New_York', use12h: false },
+        { city: 'London', timezone: 'Europe/London', use12h: false },
+      ],
+    }),
+  },
+  {
+    type: 'board',
+    label: 'Board',
+    icon: <IconFolder size={20} />,
+    description: 'Board annidata',
+    category: 'organization',
+    defaultWidth: 300,
+    defaultHeight: 200,
+    defaultContent: () => ({
+      type: 'board',
+      boardId: uuidv4(),
+      title: 'New Board',
+    }),
+  },
+  {
+    type: 'bookmark',
+    label: 'Bookmarks',
+    icon: <IconBookmark size={20} />,
+    description: 'Gestione preferiti con cartelle',
+    category: 'organization',
+    defaultWidth: 300,
+    defaultHeight: 280,
+    defaultContent: () => ({ type: 'bookmark', bookmarks: [], folders: [] }),
+  },
+  {
+    type: 'quote',
+    label: 'Quote',
+    icon: <IconMessageCircle size={20} />,
+    description: 'Citazione del giorno',
+    category: 'media',
+    defaultWidth: 280,
+    defaultHeight: 180,
+    defaultContent: () => ({ type: 'quote', text: '', author: '', lastFetched: 0 }),
+  },
+  {
+    type: 'clipboard',
+    label: 'Clipboard',
+    icon: <IconClipboard size={20} />,
+    description: 'Cronologia appunti',
+    category: 'utilities',
+    defaultWidth: 280,
+    defaultHeight: 300,
+    defaultContent: () => ({ type: 'clipboard', entries: [] }),
+  },
+  {
+    type: 'snippet',
+    label: 'Snippets',
+    icon: <IconCode size={20} />,
+    description: 'Frammenti di codice',
+    category: 'utilities',
+    defaultWidth: 300,
+    defaultHeight: 320,
+    defaultContent: () => ({ type: 'snippet', snippets: [] }),
+  },
+  {
+    type: 'palette',
+    label: 'Palette',
+    icon: <IconPalette size={20} />,
+    description: 'Generatore colori',
+    category: 'utilities',
+    defaultWidth: 280,
+    defaultHeight: 200,
+    defaultContent: () => ({ type: 'palette', colors: [], name: 'Palette', locked: [] }),
+  },
+  {
+    type: 'expense',
+    label: 'Expenses',
+    icon: <IconWallet size={20} />,
+    description: 'Tracker spese con grafico',
+    category: 'finance',
+    defaultWidth: 300,
+    defaultHeight: 320,
+    defaultContent: () => ({ type: 'expense', items: [], currency: 'EUR' }),
+  },
+  {
+    type: 'rss',
+    label: 'RSS Feed',
+    icon: <IconRss size={20} />,
+    description: 'Lettore feed RSS',
+    category: 'data',
+    defaultWidth: 320,
+    defaultHeight: 300,
+    defaultContent: () => ({ type: 'rss', feeds: [], items: [] }),
+  },
+  {
+    type: 'countdown',
+    label: 'Countdown',
+    icon: <IconClock2 size={20} />,
+    description: 'Timer countdown verso eventi',
+    category: 'time',
+    defaultWidth: 260,
+    defaultHeight: 160,
+    defaultContent: () => ({ type: 'countdown', target: 0, label: '', showSeconds: true }),
+  },
+  {
+    type: 'pomodoro-stats',
+    label: 'Pomodoro Stats',
+    icon: <IconChartBar size={20} />,
+    description: 'Statistiche sessioni pomodoro',
+    category: 'productivity',
+    defaultWidth: 300,
+    defaultHeight: 250,
+    defaultContent: () => ({ type: 'pomodoro-stats', sessions: [] }),
+  },
+  {
+    type: 'habit',
+    label: 'Habits',
+    icon: <IconTarget size={20} />,
+    description: 'Tracker abitudini quotidiane',
+    category: 'productivity',
+    defaultWidth: 320,
+    defaultHeight: 350,
+    defaultContent: () => ({ type: 'habit', habits: [] }),
+  },
+]
+
+export const WIDGET_MAP: Record<WidgetType, WidgetMeta> = Object.fromEntries(
+  WIDGET_REGISTRY.map((m) => [m.type, m])
+) as Record<WidgetType, WidgetMeta>
