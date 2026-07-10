@@ -252,7 +252,7 @@ export const TodoWidget = memo(function TodoWidget({ widget }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <style>{`.todo-item:hover { background-color: rgba(255, 255, 255, 0.02) !important; } .priority-badge:hover { transform: scale(1.15); }`}</style>
+      <style>{`.todo-item:hover { background-color: var(--wb-surface-hover) !important; } .priority-badge:hover { transform: scale(1.15); }`}</style>
       <WidgetHeader
         title={`Tasks ${totalCount > 0 ? `(${doneCount}/${totalCount})` : ''}`}
         editing={editing}

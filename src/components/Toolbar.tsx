@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { Group, Text, Button, ActionIcon, Tooltip } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
-import { IconPlus, IconArrowBackUp, IconArrowForwardUp, IconGridDots, IconShield, IconDownload, IconUpload, IconSun, IconMoon } from '@tabler/icons-react'
+import { IconPlus, IconArrowBackUp, IconArrowForwardUp, IconGridDots, IconShield, IconDownload, IconUpload, IconSun, IconMoon, IconRobot } from '@tabler/icons-react'
 import type { WidgetType } from '../types'
 import { useStore } from '../store/useStore'
 import { WidgetMenu } from './WidgetMenu'
@@ -11,9 +11,11 @@ interface ToolbarProps {
   onToggleScheme?: () => void
   scheme?: 'dark' | 'light'
   boardId?: string
+  agentOpened?: boolean
+  onToggleAgent?: () => void
 }
 
-export function Toolbar({ onToggleScheme, scheme, boardId }: ToolbarProps) {
+export function Toolbar({ onToggleScheme, scheme, boardId, agentOpened, onToggleAgent }: ToolbarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const addWidget = useStore((s) => s.addWidget)
   const widgetCount = useStore((s): number => Object.values(s.boards).reduce((acc, arr) => acc + arr.length, 0))
@@ -192,6 +194,19 @@ export function Toolbar({ onToggleScheme, scheme, boardId }: ToolbarProps) {
                 onClick={onToggleScheme}
               >
                 {scheme === 'dark' ? <IconSun size={16} /> : <IconMoon size={16} />}
+              </ActionIcon>
+            </Tooltip>
+          )}
+
+          {onToggleAgent && (
+            <Tooltip label={agentOpened ? 'Close Agent' : 'AI Agent'} position="top" withArrow>
+              <ActionIcon
+                variant={agentOpened ? 'light' : 'subtle'}
+                color={agentOpened ? 'violet' : 'gray'}
+                size="sm"
+                onClick={onToggleAgent}
+              >
+                <IconRobot size={16} />
               </ActionIcon>
             </Tooltip>
           )}

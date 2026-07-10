@@ -68,6 +68,10 @@ When unsure, list available types first with list_widget_types.`,
       },
     })
 
+    // Remove the default Panel UI injected by page-agent (no option to disable it)
+    const defaultPanel = document.getElementById('page-agent-runtime_agent-panel')
+    if (defaultPanel) defaultPanel.remove()
+
     agent.addEventListener('statuschange', () => {
       setStatus(agent.status)
     })

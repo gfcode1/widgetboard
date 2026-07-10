@@ -10,7 +10,7 @@ function Root() {
   const [scheme, setScheme] = useState<'dark' | 'light'>(() => {
     const stored = localStorage.getItem('widgetboard-color-scheme')
     if (stored === 'light' || stored === 'dark') return stored
-    return 'dark'
+    return 'light'
   })
 
   useEffect(() => {
@@ -27,7 +27,7 @@ function Root() {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ColorSchemeScript defaultColorScheme="dark" />
+    <ColorSchemeScript defaultColorScheme="light" />
     <Root />
   </StrictMode>,
 )

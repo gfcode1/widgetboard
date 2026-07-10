@@ -72,7 +72,7 @@ export function Breadcrumb() {
               }}
               styles={{
                 root: {
-                  '&:hover': !isLast ? { backgroundColor: 'rgba(255,255,255,0.06)', opacity: 1 } : {},
+                  '&:hover': !isLast ? { backgroundColor: 'var(--wb-accent-subtle)', opacity: 1 } : {},
                 },
               }}
             >

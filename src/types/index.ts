@@ -7,6 +7,72 @@ export type WidgetType =
   | 'palette' | 'expense' | 'rss' | 'countdown'
   | 'pomodoro-stats' | 'habit'
 
+export type CanvasElementType = 'group' | 'text' | 'arrow' | 'shape'
+
+export interface GroupElement {
+  id: string
+  type: 'group'
+  boardId: string
+  x: number
+  y: number
+  width: number
+  height: number
+  title: string
+  color: string
+  widgetIds: string[]
+  collapsed: boolean
+  zIndex: number
+}
+
+export interface TextElement {
+  id: string
+  type: 'text'
+  boardId: string
+  x: number
+  y: number
+  content: string
+  fontSize: number
+  fontFamily: string
+  color: string
+  fontWeight: 'normal' | 'bold'
+  fontStyle: 'normal' | 'italic'
+  zIndex: number
+}
+
+export interface ArrowElement {
+  id: string
+  type: 'arrow'
+  boardId: string
+  startX: number
+  startY: number
+  endX: number
+  endY: number
+  color: string
+  strokeWidth: number
+  style: 'solid' | 'dashed'
+  startWidgetId?: string
+  endWidgetId?: string
+  zIndex: number
+}
+
+export interface ShapeElement {
+  id: string
+  type: 'shape'
+  boardId: string
+  shape: 'rectangle' | 'ellipse'
+  x: number
+  y: number
+  width: number
+  height: number
+  fill: string
+  stroke: string
+  strokeWidth: number
+  opacity: number
+  zIndex: number
+}
+
+export type CanvasElement = GroupElement | TextElement | ArrowElement | ShapeElement
+
 export interface NoteContent {
   type: 'note'
   text: string

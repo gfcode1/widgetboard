@@ -73,7 +73,7 @@ export const ClockWidget = memo(function ClockWidget({ widget }: Props) {
             style={{
               width: 40,
               height: 1,
-              background: 'rgba(255,255,255,0.08)',
+              background: 'var(--wb-border)',
               marginTop: 6,
               marginBottom: 2,
             }}

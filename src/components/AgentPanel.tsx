@@ -58,8 +58,12 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
   )
 }
 
-export function AgentPanel() {
-  const [opened, setOpened] = useState(false)
+interface AgentPanelProps {
+  opened: boolean
+  onClose: () => void
+}
+
+export function AgentPanel({ opened, onClose }: AgentPanelProps) {
   const [settingsOpened, setSettingsOpened] = useState(false)
   const [input, setInput] = useState('')
   const viewportRef = useRef<HTMLDivElement>(null)
@@ -167,7 +171,7 @@ export function AgentPanel() {
                   size="sm"
                   variant="subtle"
                   color="gray"
-                  onClick={() => setOpened(false)}
+                  onClick={onClose}
                 >
                   <IconX size={14} />
                 </ActionIcon>
@@ -246,19 +250,6 @@ export function AgentPanel() {
             />
           </div>
         </div>
-      )}
-
-      {/* FAB Button */}
-      {!opened && (
-        <Tooltip label="AI Agent" position="left" withinPortal>
-          <button
-            className="wb-agent-fab"
-            onClick={() => setOpened(true)}
-            aria-label="Open AI Agent"
-          >
-            <IconRobot size={22} />
-          </button>
-        </Tooltip>
       )}
 
       <AgentSettingsModal

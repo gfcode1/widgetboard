@@ -49,6 +49,53 @@
   --wb-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* ── Light Theme ────────────────────────────────────── */
+[data-mantine-color-scheme="light"] {
+  /* ── Background & Surface ─────────────────────────── */
+  --wb-bg: #f8f9fc;
+  --wb-bg-gradient: radial-gradient(ellipse at 50% 40%, #ffffff 0%, #f0f2f5 70%);
+  --wb-surface: rgba(255, 255, 255, 0.85);
+  --wb-surface-solid: #ffffff;
+  --wb-surface-hover: rgba(243, 244, 246, 0.9);
+  --wb-surface-active: rgba(229, 231, 235, 0.95);
+
+  /* ── Border ───────────────────────────────────────── */
+  --wb-border: rgba(0, 0, 0, 0.08);
+  --wb-border-solid: #e5e7eb;
+  --wb-border-accent: rgba(124, 58, 237, 0.3);
+
+  /* ── Accent ───────────────────────────────────────── */
+  --wb-accent: #7c3aed;
+  --wb-accent-rgb: 124, 58, 237;
+  --wb-accent-subtle: rgba(124, 58, 237, 0.06);
+  --wb-accent-hover: rgba(124, 58, 237, 0.1);
+
+  /* ── Text ─────────────────────────────────────────── */
+  --wb-text: #1a1a2e;
+  --wb-text-dimmed: #6b7280;
+
+  /* ── Radius (unchanged) ──────────────────────────── */
+  --wb-radius: 10px;
+  --wb-radius-sm: 6px;
+  --wb-radius-lg: 14px;
+
+  /* ── Shadow Elevation System (lighter for light) ──── */
+  --wb-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --wb-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05);
+  --wb-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
+  --wb-shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.08);
+  --wb-shadow-hover: 0 8px 20px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
+
+  /* ── Glassmorphism (lighter) ──────────────────────── */
+  --wb-glass-bg: rgba(255, 255, 255, 0.8);
+  --wb-glass-border: rgba(0, 0, 0, 0.06);
+  --wb-glass-blur: blur(20px) saturate(180%);
+
+  /* ── Glow ─────────────────────────────────────────── */
+  --wb-glow-accent: 0 0 12px rgba(var(--wb-accent-rgb), 0.15);
+  --wb-glow-accent-lg: 0 0 24px rgba(var(--wb-accent-rgb), 0.1), 0 0 48px rgba(var(--wb-accent-rgb), 0.05);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -92,6 +139,14 @@ body {
   background: rgba(255, 255, 255, 0.15);
 }
 
+[data-mantine-color-scheme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+[data-mantine-color-scheme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
 ::selection {
   background: rgba(var(--wb-accent-rgb), 0.3);
 }
@@ -120,6 +175,14 @@ body {
 
 .widget-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.15);
+}
+
+[data-mantine-color-scheme="light"] .widget-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+[data-mantine-color-scheme="light"] .widget-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
 }
 
 /* ── Animations ────────────────────────────────────── */
@@ -180,6 +243,17 @@ body {
   border: 1px solid var(--wb-glass-border);
 }
 
+/* ── Canvas Grid ──────────────────────────────────── */
+.wb-canvas {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px), var(--wb-bg-gradient);
+  background-size: 20px 20px, 100% 100%;
+}
+
+[data-mantine-color-scheme="light"] .wb-canvas {
+  background-image: radial-gradient(circle, rgba(0,0,0,0.06) 1px, transparent 1px), var(--wb-bg-gradient);
+  background-size: 20px 20px, 100% 100%;
+}
+
 /* ── Widget Card ───────────────────────────────────── */
 .wb-widget-card {
   background: var(--wb-surface);
@@ -225,36 +299,13 @@ div:hover > .wb-resize-handle {
   opacity: 1;
 }
 
-/* ── Agent FAB ─────────────────────────────────────── */
-.wb-agent-fab {
-  position: fixed;
-  bottom: 80px;
-  right: 20px;
-  z-index: 200;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: none;
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(var(--wb-accent-rgb), 0.4);
-  transition: transform var(--wb-transition-fast), box-shadow var(--wb-transition-fast);
-}
-
-.wb-agent-fab:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 24px rgba(var(--wb-accent-rgb), 0.5);
-}
-
-.wb-agent-fab:active {
-  transform: scale(0.95);
-}
-
 /* ── Agent Panel ───────────────────────────────────── */
+/* Hide page-agent default UI — we use our own custom panel */
+#page-agent-runtime_agent-panel,
+#page-agent-runtime_simulator-mask,
+#playwright-highlight-container {
+  display: none !important;
+}
 .wb-agent-panel {
   position: fixed;
   bottom: 80px;
@@ -351,11 +402,6 @@ div:hover > .wb-resize-handle {
     bottom: 72px;
     right: 12px;
     left: 12px;
-  }
-
-  .wb-agent-fab {
-    bottom: 72px;
-    right: 12px;
   }
 
   .wb-resize-handle {

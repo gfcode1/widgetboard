@@ -18,7 +18,7 @@ export function WidgetHeader({ title, editing, onToggleEdit, rightSlot, icon, co
       py={6}
       style={{
         borderBottom: '1px solid var(--wb-border)',
-        background: 'rgba(255, 255, 255, 0.015)',
+        background: 'var(--wb-surface-hover)',
       }}
     >
       <Group gap={6}>

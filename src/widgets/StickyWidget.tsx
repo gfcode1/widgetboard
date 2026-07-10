@@ -48,7 +48,7 @@ export const StickyWidget = memo(function StickyWidget({ widget }: Props) {
         height: '100%',
         backgroundColor: content.color,
         borderRadius: 'var(--mantine-radius-md)',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.1)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 var(--wb-border)',
         position: 'relative',
       }}
     >

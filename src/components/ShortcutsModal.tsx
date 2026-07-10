@@ -93,7 +93,7 @@ export function ShortcutsModal() {
             py={4}
             style={{
               borderRadius: 'var(--mantine-radius-sm)',
-              backgroundColor: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent',
+              backgroundColor: i % 2 === 0 ? 'var(--wb-surface-hover)' : 'transparent',
             }}
           >
             <Text size="sm" c="gray.3">{shortcut.description}</Text>

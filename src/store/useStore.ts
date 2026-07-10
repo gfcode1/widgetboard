@@ -7,10 +7,11 @@ import { createSelectionSlice, type SelectionSlice } from './selectionSlice'
 import { createBoardSlice, type BoardSlice } from './boardSlice'
 import { createWidgetSlice, type WidgetSlice } from './widgetSlice'
 import { createExportSlice, type ExportSlice } from './exportSlice'
+import { createElementsSlice, type ElementsSlice } from './elementsSlice'
 
 export type BoardsState = Record<string, Widget[]>
 
-export type WidgetStore = CanvasSlice & HistorySlice & SelectionSlice & BoardSlice & WidgetSlice & ExportSlice
+export type WidgetStore = CanvasSlice & HistorySlice & SelectionSlice & BoardSlice & WidgetSlice & ExportSlice & ElementsSlice
 
 const ROOT_BOARD_ID = 'root'
 
@@ -33,10 +34,11 @@ export const useStore = create<WidgetStore>()(
       ...createBoardSlice(...a),
       ...createWidgetSlice(...a),
       ...createExportSlice(...a),
+      ...createElementsSlice(...a),
     }),
     {
       name: 'widgetboard-v3',
-      version: 2,
+      version: 4,
       migrate: (persisted: unknown, version: number | undefined) => {
         const data = persisted as Record<string, unknown>
         if (version === undefined || version < 2) {
@@ -46,6 +48,25 @@ export const useStore = create<WidgetStore>()(
             boards,
             currentBoardId: null,
             navigationStack: [],
+            canvasElements: [],
+          } as Partial<WidgetStore>
+        }
+        if (version < 3) {
+          return {
+            ...data,
+            canvasElements: [],
+          } as Partial<WidgetStore>
+        }
+        if (version < 4) {
+          const elements = Array.isArray(data.canvasElements)
+            ? (data.canvasElements as Array<Record<string, unknown>>).map(el => ({
+                ...el,
+                boardId: el.boardId ?? 'root',
+              }))
+            : []
+          return {
+            ...data,
+            canvasElements: elements,
           } as Partial<WidgetStore>
         }
         return data as Partial<WidgetStore>
@@ -54,6 +75,7 @@ export const useStore = create<WidgetStore>()(
         boards: state.boards,
         snapEnabled: state.snapEnabled,
         collisionEnabled: state.collisionEnabled,
+        canvasElements: state.canvasElements,
       }),
     }
   )

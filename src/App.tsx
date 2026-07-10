@@ -26,6 +26,7 @@ interface AppProps {
 
 function App({ onToggleScheme, scheme }: AppProps) {
   const [openBoardId, setOpenBoardId] = useState<string | null>(null)
+  const [agentOpened, setAgentOpened] = useState(false)
 
   const handleOpenBoard = useCallback((boardId: string) => {
     setOpenBoardId(boardId)
@@ -37,7 +38,12 @@ function App({ onToggleScheme, scheme }: AppProps) {
 
   return (
     <Box w="100%" h="100%" style={{ display: 'flex', flexDirection: 'column' }}>
-      <Toolbar onToggleScheme={onToggleScheme} scheme={scheme} />
+      <Toolbar
+        onToggleScheme={onToggleScheme}
+        scheme={scheme}
+        agentOpened={agentOpened}
+        onToggleAgent={() => setAgentOpened((o) => !o)}
+      />
       <Canvas onOpenBoard={handleOpenBoard} />
       <Breadcrumb />
       <Minimap />
@@ -45,7 +51,7 @@ function App({ onToggleScheme, scheme }: AppProps) {
       <CommandPalette onToggleScheme={onToggleScheme} scheme={scheme} />
       <Suspense fallback={<ModalFallback />}>
         <ShortcutsModal />
-        <AgentPanel />
+        <AgentPanel opened={agentOpened} onClose={() => setAgentOpened(false)} />
       </Suspense>
       {openBoardId && (
         <Suspense fallback={<ModalFallback />}>

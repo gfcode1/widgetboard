@@ -7,6 +7,9 @@ import { useStore, ROOT_BOARD_ID } from '../store/useStore'
 import type { Widget as WidgetType } from '../types'
 import { Widget } from './Widget'
 import { ContextMenu } from './ContextMenu'
+import { CanvasElements } from './canvas/CanvasElements'
+import { CanvasToolbar } from './canvas/CanvasToolbar'
+import { CanvasContextMenu } from './canvas/CanvasContextMenu'
 import { useCanvasPan } from '../hooks/useCanvasPan'
 import { useCanvasZoom } from '../hooks/useCanvasZoom'
 import { useCanvasTouch } from '../hooks/useCanvasTouch'
@@ -40,6 +43,12 @@ export function Canvas({ boardId = ROOT_BOARD_ID, onOpenBoard }: CanvasProps) {
     x: number
     y: number
     widgetId: string
+  } | null>(null)
+  const [canvasContextMenu, setCanvasContextMenu] = useState<{
+    screenX: number
+    screenY: number
+    canvasX: number
+    canvasY: number
   } | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null)
@@ -162,6 +171,7 @@ export function Canvas({ boardId = ROOT_BOARD_ID, onOpenBoard }: CanvasProps) {
         setSelectedWidgetId(null)
         setSelectedIds([])
         setContextMenu(null)
+        setCanvasContextMenu(null)
       }
     }
     window.addEventListener('keydown', handler)
@@ -180,7 +190,10 @@ export function Canvas({ boardId = ROOT_BOARD_ID, onOpenBoard }: CanvasProps) {
   }, [setCanvasTransform])
 
   useEffect(() => {
-    const handler = () => setContextMenu(null)
+    const handler = () => {
+      setContextMenu(null)
+      setCanvasContextMenu(null)
+    }
     window.addEventListener('click', handler)
     return () => window.removeEventListener('click', handler)
   }, [])
@@ -219,22 +232,40 @@ export function Canvas({ boardId = ROOT_BOARD_ID, onOpenBoard }: CanvasProps) {
       if (e.target === canvasRef.current || (e.target as HTMLElement).dataset.canvas === 'true') {
         setSelectedWidgetId(null)
         setSelectedIds([])
+        setCanvasContextMenu(null)
       }
     },
     [setSelectedIds]
   )
 
+  const handleCanvasContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.target === canvasRef.current || (e.target as HTMLElement).dataset.canvas === 'true') {
+        e.preventDefault()
+        setContextMenu(null)
+        const canvasPos = screenToCanvas(e.clientX, e.clientY)
+        setCanvasContextMenu({
+          screenX: e.clientX,
+          screenY: e.clientY,
+          canvasX: canvasPos.x,
+          canvasY: canvasPos.y,
+        })
+      }
+    },
+    [screenToCanvas]
+  )
+
   return (
     <div
       ref={canvasRef}
+      className="wb-canvas"
       style={{
         width: '100%',
         height: '100%',
         overflow: 'hidden',
-        backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px), var(--wb-bg-gradient)',
-        backgroundSize: '20px 20px, 100% 100%',
         cursor: isPanning ? 'grabbing' : 'grab',
         touchAction: 'none',
+        transition: 'background 0.2s ease',
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
@@ -244,6 +275,7 @@ export function Canvas({ boardId = ROOT_BOARD_ID, onOpenBoard }: CanvasProps) {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onClick={handleCanvasClick}
+      onContextMenu={handleCanvasContextMenu}
     >
       <Group
         gap="xs"
@@ -324,6 +356,7 @@ export function Canvas({ boardId = ROOT_BOARD_ID, onOpenBoard }: CanvasProps) {
           }}
           data-canvas="true"
         >
+          <CanvasElements scale={canvasScale} boardId={boardId} selectedWidgetId={selectedWidgetId} />
           {widgets.map((widget) => (
             <Widget
               key={widget.id}
@@ -372,6 +405,17 @@ export function Canvas({ boardId = ROOT_BOARD_ID, onOpenBoard }: CanvasProps) {
           onClose={() => setContextMenu(null)}
         />
       )}
+      {canvasContextMenu && (
+        <CanvasContextMenu
+          x={canvasContextMenu.screenX}
+          y={canvasContextMenu.screenY}
+          canvasX={canvasContextMenu.canvasX}
+          canvasY={canvasContextMenu.canvasY}
+          boardId={boardId}
+          onClose={() => setCanvasContextMenu(null)}
+        />
+      )}
+      <CanvasToolbar boardId={boardId} />
     </div>
   )
 }
