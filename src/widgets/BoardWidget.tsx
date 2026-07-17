@@ -1,63 +1,77 @@
 import { memo, useState, useCallback } from 'react'
-import { Text, TextInput, Group, Badge } from '@mantine/core'
-import { IconFolder, IconArrowRight } from '@tabler/icons-react'
+import { Text, Group, ActionIcon, TextInput, Tooltip, Badge } from '@mantine/core'
+import { IconFolder, IconArrowRight, IconEdit, IconCheck } from '@tabler/icons-react'
 import type { Widget } from '../types'
 import { useStore } from '../store/useStore'
-import { WidgetHeader } from './base/WidgetHeader'
 
 interface Props {
   widget: Widget
-  onOpenBoard: (boardId: string) => void
+  onOpenBoard?: (boardId: string) => void
 }
+
+const BOARD_COLORS = [
+  '#6d28d9',
+  '#2563eb',
+  '#059669',
+  '#d97706',
+  '#dc2626',
+  '#7c3aed',
+  '#0891b2',
+  '#be185d',
+]
 
 export const BoardWidget = memo(function BoardWidget({ widget, onOpenBoard }: Props) {
   const updateWidget = useStore((s) => s.updateWidget)
   const boards = useStore((s) => s.boards)
   const [editing, setEditing] = useState(false)
+  const [titleInput, setTitleInput] = useState('')
 
-  const boardId = widget.content.type === 'board' ? widget.content.boardId : ''
-  const title = widget.content.type === 'board' ? widget.content.title : ''
-  const widgetCount = boardId ? (boards[boardId] ?? []).length : 0
+  const content =
+    widget.content.type === 'board'
+      ? widget.content
+      : { type: 'board' as const, boardId: '', title: 'Board' }
 
-  const handleTitleChange = useCallback(
-    (value: string) => {
-      if (widget.content.type !== 'board') return
-      updateWidget(widget.id, {
-        content: { type: 'board', boardId: widget.content.boardId, title: value },
-      })
+  const boardWidgets = boards[content.boardId] || []
+  const widgetCount = boardWidgets.length
+
+  const startEdit = () => {
+    setTitleInput(content.title)
+    setEditing(true)
+  }
+
+  const saveTitle = useCallback(() => {
+    updateWidget(widget.id, {
+      content: { ...content, title: titleInput.trim() || 'Board' },
+    })
+    setEditing(false)
+  }, [widget.id, content, titleInput, updateWidget])
+
+  const setColor = useCallback(
+    (color: string) => {
+      updateWidget(widget.id, { content: { ...content, color } })
     },
-    [widget.id, widget.content, updateWidget]
+    [widget.id, content, updateWidget]
   )
 
-  const handleDoubleClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation()
-      setEditing(true)
-    },
-    []
-  )
-
-  const handleClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation()
-      if (!editing && boardId) {
-        onOpenBoard(boardId)
-      }
-    },
-    [editing, boardId, onOpenBoard]
-  )
-
-  if (widget.content.type !== 'board') return null
+  const boardColor = (content as { color?: string }).color || BOARD_COLORS[0]!
 
   return (
     <div
-      style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
-      onDoubleClick={handleDoubleClick}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        background: 'var(--wb-surface-hover)',
+        borderRadius: 'var(--wb-radius)',
+        overflow: 'hidden',
+      }}
     >
-      <WidgetHeader
-        title="Board"
-        editing={editing}
-        onToggleEdit={() => setEditing(!editing)}
+      <div
+        style={{
+          height: 4,
+          backgroundColor: boardColor,
+          flexShrink: 0,
+        }}
       />
       <div
         style={{
@@ -66,59 +80,119 @@ export const BoardWidget = memo(function BoardWidget({ widget, onOpenBoard }: Pr
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: 16,
+          padding: 12,
           gap: 8,
-          cursor: editing ? 'text' : 'pointer',
-          opacity: editing ? 0.9 : 1,
         }}
-        onClick={handleClick}
       >
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 'var(--wb-radius)',
+            background: `linear-gradient(135deg, ${boardColor}30, ${boardColor}10)`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <IconFolder size={24} style={{ color: boardColor, opacity: 0.8 }} />
+        </div>
+
         {editing ? (
-          <TextInput
-            value={title}
-            onChange={(e) => handleTitleChange(e.currentTarget.value)}
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') setEditing(false)
-            }}
-            size="sm"
-            variant="unstyled"
-            style={{
-              textAlign: 'center',
-              '& input': {
-                textAlign: 'center',
-                color: 'var(--mantine-color-gray-2)',
-                fontWeight: 500,
-                fontSize: 'var(--mantine-font-size-md)',
-              },
-            }}
-            autoFocus
-          />
+          <Group gap="xs">
+            <TextInput
+              value={titleInput}
+              onChange={(e) => setTitleInput(e.currentTarget.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveTitle()
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              size="xs"
+              autoFocus
+            />
+            <ActionIcon
+              variant="light"
+              color="violet"
+              size="sm"
+              onClick={saveTitle}
+              aria-label="Save title"
+            >
+              <IconCheck size={14} />
+            </ActionIcon>
+          </Group>
         ) : (
-          <>
-            <Group gap={8} align="center">
-              <IconFolder size={28} style={{ color: 'var(--wb-accent)' }} />
-              <Text fw={600} size="md" c="gray.2">
-                {title}
-              </Text>
-            </Group>
-            <Group gap={6} align="center">
-              <Badge
-                size="sm"
-                variant="light"
-                color="gray"
-                style={{ backgroundColor: 'var(--wb-accent-subtle)' }}
-              >
-                {widgetCount} {widgetCount === 1 ? 'widget' : 'widgets'}
-              </Badge>
-              <IconArrowRight
-                size={14}
-                style={{ color: 'var(--wb-text-dimmed)' }}
-              />
-            </Group>
-          </>
+          <Group gap="xs">
+            <Text fw={600} size="sm" c="gray.3">
+              {content.title}
+            </Text>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="xs"
+              onClick={startEdit}
+              onMouseDown={(e) => e.stopPropagation()}
+              aria-label="Rename board"
+            >
+              <IconEdit size={10} />
+            </ActionIcon>
+          </Group>
         )}
+
+        <Badge size="xs" variant="light" color="gray">
+          {widgetCount} widget{widgetCount !== 1 ? 's' : ''}
+        </Badge>
+
+        <ActionIcon
+          variant="filled"
+          color="violet"
+          size="lg"
+          radius="xl"
+          onClick={() => onOpenBoard?.(content.boardId)}
+          aria-label={`Open ${content.title}`}
+          style={{
+            boxShadow: 'var(--wb-glow-accent)',
+            transition: 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+          }}
+          className="board-enter-btn"
+        >
+          <IconArrowRight size={20} />
+        </ActionIcon>
       </div>
+
+      <Group
+        gap={4}
+        px={8}
+        py={6}
+        justify="center"
+        style={{
+          borderTop: '1px solid var(--wb-border)',
+        }}
+      >
+        {BOARD_COLORS.map((c) => (
+          <Tooltip key={c} label={c}>
+            <button
+              type="button"
+              onClick={() => setColor(c)}
+              onMouseDown={(e) => e.stopPropagation()}
+              style={{
+                width: 16,
+                height: 16,
+                borderRadius: '50%',
+                backgroundColor: c,
+                border: boardColor === c ? '2px solid white' : '2px solid transparent',
+                cursor: 'pointer',
+                padding: 0,
+                transition: 'transform 150ms ease',
+                transform: boardColor === c ? 'scale(1.2)' : 'none',
+              }}
+            />
+          </Tooltip>
+        ))}
+      </Group>
+
+      <style>{`
+        .board-enter-btn:hover { transform: scale(1.1); }
+      `}</style>
     </div>
   )
 })

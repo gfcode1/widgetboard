@@ -20,7 +20,7 @@
 
   /* ── Text ─────────────────────────────────────────── */
   --wb-text: #e4e4e7;
-  --wb-text-dimmed: #71717a;
+  --wb-text-dimmed: #8b8b96;
 
   /* ── Radius ───────────────────────────────────────── */
   --wb-radius: 10px;
@@ -41,7 +41,8 @@
 
   /* ── Glow ─────────────────────────────────────────── */
   --wb-glow-accent: 0 0 12px rgba(var(--wb-accent-rgb), 0.3);
-  --wb-glow-accent-lg: 0 0 24px rgba(var(--wb-accent-rgb), 0.2), 0 0 48px rgba(var(--wb-accent-rgb), 0.08);
+  --wb-glow-accent-lg:
+    0 0 24px rgba(var(--wb-accent-rgb), 0.2), 0 0 48px rgba(var(--wb-accent-rgb), 0.08);
 
   /* ── Animation Tokens ─────────────────────────────── */
   --wb-transition-fast: 120ms cubic-bezier(0.25, 0.1, 0.25, 1);
@@ -50,7 +51,7 @@
 }
 
 /* ── Light Theme ────────────────────────────────────── */
-[data-mantine-color-scheme="light"] {
+[data-mantine-color-scheme='light'] {
   /* ── Background & Surface ─────────────────────────── */
   --wb-bg: #f8f9fc;
   --wb-bg-gradient: radial-gradient(ellipse at 50% 40%, #ffffff 0%, #f0f2f5 70%);
@@ -93,7 +94,8 @@
 
   /* ── Glow ─────────────────────────────────────────── */
   --wb-glow-accent: 0 0 12px rgba(var(--wb-accent-rgb), 0.15);
-  --wb-glow-accent-lg: 0 0 24px rgba(var(--wb-accent-rgb), 0.1), 0 0 48px rgba(var(--wb-accent-rgb), 0.05);
+  --wb-glow-accent-lg:
+    0 0 24px rgba(var(--wb-accent-rgb), 0.1), 0 0 48px rgba(var(--wb-accent-rgb), 0.05);
 }
 
 * {
@@ -102,11 +104,20 @@
   box-sizing: border-box;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: auto;
 }
@@ -139,11 +150,11 @@ body {
   background: rgba(255, 255, 255, 0.15);
 }
 
-[data-mantine-color-scheme="light"] ::-webkit-scrollbar-thumb {
+[data-mantine-color-scheme='light'] ::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.12);
 }
 
-[data-mantine-color-scheme="light"] ::-webkit-scrollbar-thumb:hover {
+[data-mantine-color-scheme='light'] ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.2);
 }
 
@@ -177,11 +188,11 @@ body {
   background: rgba(255, 255, 255, 0.15);
 }
 
-[data-mantine-color-scheme="light"] .widget-scroll::-webkit-scrollbar-thumb {
+[data-mantine-color-scheme='light'] .widget-scroll::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.12);
 }
 
-[data-mantine-color-scheme="light"] .widget-scroll::-webkit-scrollbar-thumb:hover {
+[data-mantine-color-scheme='light'] .widget-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.2);
 }
 
@@ -198,8 +209,12 @@ body {
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slide-up {
@@ -245,13 +260,61 @@ body {
 
 /* ── Canvas Grid ──────────────────────────────────── */
 .wb-canvas {
-  background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px), var(--wb-bg-gradient);
-  background-size: 20px 20px, 100% 100%;
+  --grid-size: 20px;
+  --grid-offset-x: 0px;
+  --grid-offset-y: 0px;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.04) 1px, transparent 1px), var(--wb-bg-gradient);
+  background-size:
+    var(--grid-size) var(--grid-size),
+    100% 100%;
+  background-position:
+    var(--grid-offset-x) var(--grid-offset-y),
+    center center;
 }
 
-[data-mantine-color-scheme="light"] .wb-canvas {
-  background-image: radial-gradient(circle, rgba(0,0,0,0.06) 1px, transparent 1px), var(--wb-bg-gradient);
-  background-size: 20px 20px, 100% 100%;
+[data-mantine-color-scheme='light'] .wb-canvas {
+  background-image:
+    radial-gradient(circle, rgba(0, 0, 0, 0.06) 1px, transparent 1px), var(--wb-bg-gradient);
+  background-size:
+    var(--grid-size) var(--grid-size),
+    100% 100%;
+  background-position:
+    var(--grid-offset-x) var(--grid-offset-y),
+    center center;
+}
+
+[data-canvas-bg='line-grid'] .wb-canvas {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px), var(--wb-bg-gradient);
+  background-size:
+    var(--grid-size) var(--grid-size),
+    var(--grid-size) var(--grid-size),
+    100% 100%;
+  background-position:
+    var(--grid-offset-x) var(--grid-offset-y),
+    var(--grid-offset-x) var(--grid-offset-y),
+    center center;
+}
+
+[data-mantine-color-scheme='light'][data-canvas-bg='line-grid'] .wb-canvas {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px), var(--wb-bg-gradient);
+  background-size:
+    var(--grid-size) var(--grid-size),
+    var(--grid-size) var(--grid-size),
+    100% 100%;
+  background-position:
+    var(--grid-offset-x) var(--grid-offset-y),
+    var(--grid-offset-x) var(--grid-offset-y),
+    center center;
+}
+
+[data-canvas-bg='solid'] .wb-canvas {
+  background-image: none;
+  background: var(--wb-bg);
 }
 
 /* ── Widget Card ───────────────────────────────────── */
@@ -268,20 +331,29 @@ body {
     transform var(--wb-transition-fast);
 }
 
-.wb-widget-card:hover {
-  border-color: rgba(var(--wb-accent-rgb), 0.15);
-  box-shadow: var(--wb-shadow-hover), 0 0 0 1px rgba(var(--wb-accent-rgb), 0.06);
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .wb-widget-card:hover {
+    border-color: rgba(var(--wb-accent-rgb), 0.15);
+    box-shadow:
+      var(--wb-shadow-hover),
+      0 0 0 1px rgba(var(--wb-accent-rgb), 0.06);
+    transform: translateY(-1px);
+  }
 }
 
 .wb-widget-card--active {
   border-color: var(--wb-accent) !important;
-  box-shadow: 0 0 0 1px var(--wb-accent), var(--wb-shadow-md), var(--wb-glow-accent) !important;
+  box-shadow:
+    0 0 0 1px var(--wb-accent),
+    var(--wb-shadow-md),
+    var(--wb-glow-accent) !important;
 }
 
 .wb-widget-card--selected {
   border-color: var(--wb-accent) !important;
-  box-shadow: 0 0 0 1px var(--wb-accent), var(--wb-shadow) !important;
+  box-shadow:
+    0 0 0 1px var(--wb-accent),
+    var(--wb-shadow) !important;
 }
 
 /* ── Resize Handles ────────────────────────────────── */
@@ -365,7 +437,9 @@ div:hover > .wb-resize-handle {
   backdrop-filter: var(--wb-glass-blur);
   -webkit-backdrop-filter: var(--wb-glass-blur);
   border: 1px solid var(--wb-glass-border);
-  box-shadow: var(--wb-shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow:
+    var(--wb-shadow-lg),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 /* ── Context Menu ──────────────────────────────────── */
@@ -398,7 +472,7 @@ div:hover > .wb-resize-handle {
 @media (max-width: 768px) {
   .wb-agent-panel {
     width: calc(100vw - 24px);
-    height: 60vh;
+    height: 60dvh;
     bottom: 72px;
     right: 12px;
     left: 12px;
@@ -411,4 +485,50 @@ div:hover > .wb-resize-handle {
   div:hover > .wb-resize-handle {
     opacity: 0.8 !important;
   }
+
+  .wb-toolbar {
+    padding-bottom: env(safe-area-inset-bottom, 4px) !important;
+  }
+}
+
+/* ── Safe Area Inset ──────────────────────────────── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .wb-toolbar {
+    padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .wb-agent-panel {
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ── Tablet adjustments ────────────────────────────── */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .wb-agent-panel {
+    width: 320px;
+    height: 400px;
+    right: 16px;
+    bottom: 72px;
+  }
+
+  .wb-widget-card {
+    min-width: 180px;
+  }
+}
+
+/* ── Edit/Use Mode Transitions ─────────────────────── */
+.wb-canvas {
+  transition: cursor 200ms ease;
+}
+
+.wb-widget-card {
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.wb-toolbar {
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease;
 }

@@ -55,14 +55,15 @@ export function AgentSettingsModal({ opened, onClose }: AgentSettingsModalProps)
             message: { color: 'var(--wb-text)', fontSize: 12 },
           }}
         >
-          Pre-configured with Alibaba free testing API (Qwen 3.5 Plus). No API key
-          needed for evaluation. You can switch to your own provider below.
+          Works with any OpenAI-compatible API: Alibaba DashScope, OpenAI, DeepSeek, OpenRouter,
+          Anthropic (via proxy), Ollama, and more. No API key needed for the default testing
+          endpoint.
         </Alert>
 
         <TextInput
           label="Base URL"
           description="OpenAI-compatible API endpoint"
-          placeholder="https://page-ag-testing-ohftxirgbn.cn-shanghai.fcapp.run"
+          placeholder={import.meta.env.VITE_AI_ENDPOINT || 'https://your-api.example.com/v1'}
           value={config.baseURL}
           onChange={(e) => setConfig({ ...config, baseURL: e.currentTarget.value })}
           styles={{
@@ -78,7 +79,7 @@ export function AgentSettingsModal({ opened, onClose }: AgentSettingsModalProps)
         <TextInput
           label="Model"
           description="Model identifier"
-          placeholder="qwen3.5-plus"
+          placeholder={import.meta.env.VITE_AI_MODEL || 'gpt-4o'}
           value={config.model}
           onChange={(e) => setConfig({ ...config, model: e.currentTarget.value })}
           styles={{
@@ -109,8 +110,8 @@ export function AgentSettingsModal({ opened, onClose }: AgentSettingsModalProps)
           }}
         />
         <Text size="xs" c="dimmed">
-          Works with any OpenAI-compatible API: Alibaba DashScope, OpenAI, DeepSeek,
-          OpenRouter, Anthropic (via proxy), Ollama, and more.
+          Works with any OpenAI-compatible API: Alibaba DashScope, OpenAI, DeepSeek, OpenRouter,
+          Anthropic (via proxy), Ollama, and more.
         </Text>
         <Group justify="flex-end">
           <Button

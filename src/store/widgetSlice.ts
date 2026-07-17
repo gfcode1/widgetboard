@@ -14,12 +14,25 @@ function getWidgetsForBoard(boards: Record<string, Widget[]>, boardId: string): 
 }
 
 export interface WidgetSlice {
-  addWidget: (type: WidgetType, screenX: number, screenY: number, containerRect: DOMRect, targetBoardId?: string) => void
+  addWidget: (
+    type: WidgetType,
+    screenX: number,
+    screenY: number,
+    containerRect: DOMRect,
+    targetBoardId?: string
+  ) => void
   updateWidget: (id: string, data: Partial<Widget>, targetBoardId?: string) => void
   removeWidget: (id: string, targetBoardId?: string) => void
   moveWidget: (id: string, x: number, y: number, targetBoardId?: string) => void
   resizeWidget: (id: string, width: number, height: number, targetBoardId?: string) => void
-  resizeWidgetWithPosition: (id: string, x: number, y: number, width: number, height: number, targetBoardId?: string) => void
+  resizeWidgetWithPosition: (
+    id: string,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    targetBoardId?: string
+  ) => void
   duplicateWidget: (id: string, targetBoardId?: string) => void
   toggleLockWidget: (id: string, targetBoardId?: string) => void
   bringToFront: (id: string, targetBoardId?: string) => void
@@ -46,16 +59,28 @@ export const createWidgetSlice: StateCreator<WidgetStore, [], [], WidgetSlice> =
 
     if (state.collisionEnabled) {
       const tempWidget: Widget = {
-        id, type, x, y, ...size, content: defaultContent(type), locked: false,
+        id,
+        type,
+        x,
+        y,
+        ...size,
+        content: defaultContent(type),
+        locked: false,
       }
-      const pos = findNonOverlappingPosition(
-        tempWidget, boardWidgets, x, y, state.snapEnabled
-      )
+      const pos = findNonOverlappingPosition(tempWidget, boardWidgets, x, y, state.snapEnabled)
       x = pos.x
       y = pos.y
     }
 
-    const newWidget: Widget = { id, type, x, y, ...size, content: defaultContent(type), locked: false }
+    const newWidget: Widget = {
+      id,
+      type,
+      x,
+      y,
+      ...size,
+      content: defaultContent(type),
+      locked: false,
+    }
     set((prevState) => ({
       boards: {
         ...prevState.boards,
@@ -71,9 +96,7 @@ export const createWidgetSlice: StateCreator<WidgetStore, [], [], WidgetSlice> =
     set((s) => ({
       boards: {
         ...s.boards,
-        [boardId]: (s.boards[boardId] ?? []).map((w) =>
-          w.id === id ? { ...w, ...data } : w
-        ),
+        [boardId]: (s.boards[boardId] ?? []).map((w) => (w.id === id ? { ...w, ...data } : w)),
       },
     }))
     get().pushHistory()
@@ -107,7 +130,11 @@ export const createWidgetSlice: StateCreator<WidgetStore, [], [], WidgetSlice> =
     if (state.collisionEnabled && widget) {
       const tempWidget = { ...widget }
       const pos = findNonOverlappingPosition(
-        tempWidget, boardWidgets, finalX, finalY, state.snapEnabled
+        tempWidget,
+        boardWidgets,
+        finalX,
+        finalY,
+        state.snapEnabled
       )
       resolvedX = pos.x
       resolvedY = pos.y
@@ -161,7 +188,6 @@ export const createWidgetSlice: StateCreator<WidgetStore, [], [], WidgetSlice> =
         ),
       },
     }))
-    get().forcePushHistory()
   },
 
   duplicateWidget: (id, targetBoardId) => {
@@ -175,10 +201,7 @@ export const createWidgetSlice: StateCreator<WidgetStore, [], [], WidgetSlice> =
     set((s) => ({
       boards: {
         ...s.boards,
-        [boardId]: [
-          ...(s.boards[boardId] ?? []),
-          { ...widget, id: newId, x: newX, y: newY },
-        ],
+        [boardId]: [...(s.boards[boardId] ?? []), { ...widget, id: newId, x: newX, y: newY }],
       },
     }))
     get().forcePushHistory()
@@ -205,7 +228,7 @@ export const createWidgetSlice: StateCreator<WidgetStore, [], [], WidgetSlice> =
       const widgets = s.boards[boardId] ?? []
       const idx = widgets.findIndex((w) => w.id === id)
       if (idx === -1 || idx === widgets.length - 1) return s
-      const widget = widgets[idx]
+      const widget = widgets[idx]!
       const rest = widgets.filter((w) => w.id !== id)
       return {
         boards: { ...s.boards, [boardId]: [...rest, widget] },
@@ -221,7 +244,7 @@ export const createWidgetSlice: StateCreator<WidgetStore, [], [], WidgetSlice> =
       const widgets = s.boards[boardId] ?? []
       const idx = widgets.findIndex((w) => w.id === id)
       if (idx <= 0) return s
-      const widget = widgets[idx]
+      const widget = widgets[idx]!
       const rest = widgets.filter((w) => w.id !== id)
       return {
         boards: { ...s.boards, [boardId]: [widget, ...rest] },

@@ -43,15 +43,19 @@ export class WidgetErrorBoundary extends Component<Props, State> {
           <Text size="xs" c="dimmed" fw={500}>
             Widget crashed
           </Text>
-          <Text size="xs" c="dimmed" style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <Text
+            size="xs"
+            c="dimmed"
+            style={{
+              maxWidth: 200,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
             {this.state.error?.message || 'Unknown error'}
           </Text>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            size="sm"
-            onClick={this.handleRetry}
-          >
+          <ActionIcon variant="subtle" color="gray" size="sm" onClick={this.handleRetry}>
             <IconRefresh size={14} />
           </ActionIcon>
         </Stack>

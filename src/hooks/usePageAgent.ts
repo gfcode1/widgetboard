@@ -22,8 +22,8 @@ export function getStoredConfig(): AgentConfig {
     if (raw) return JSON.parse(raw)
   } catch {}
   return {
-    baseURL: 'https://page-ag-testing-ohftxirgbn.cn-shanghai.fcapp.run',
-    model: 'qwen3.5-plus',
+    baseURL: import.meta.env.VITE_AI_ENDPOINT ?? '',
+    model: import.meta.env.VITE_AI_MODEL ?? '',
     apiKey: '',
   }
 }
@@ -34,7 +34,9 @@ export function storeConfig(config: AgentConfig) {
 
 export function usePageAgent() {
   const agentRef = useRef<PageAgent | null>(null)
-  const [status, setStatus] = useState<'idle' | 'running' | 'completed' | 'error' | 'stopped'>('idle')
+  const [status, setStatus] = useState<'idle' | 'running' | 'completed' | 'error' | 'stopped'>(
+    'idle'
+  )
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [currentActivity, setCurrentActivity] = useState<string>('')
 
@@ -61,7 +63,7 @@ export function usePageAgent() {
       instructions: {
         system: `You are WidgetBoard AI Assistant. You control a widget-based infinite canvas dashboard.
 You can add, remove, move, list, and update widgets using the available tools.
-Available widget types: note, clock, todo, calendar, search, link, image, weather, pomodoro, calc, sticky, embed, worldclock, board, bookmark, quote, clipboard, snippet, palette, expense, rss, countdown, pomodoro-stats, habit.
+Available widget types: note, clock, todo, calendar, search, link, image, weather, pomodoro, calc, sticky, embed, worldclock, board, bookmark, quote, clipboard, snippet, palette, expense, rss, countdown, pomodoro-stats, habit, timer, kanban.
 Always use the tools to manipulate widgets. Never try to click DOM elements directly for widget operations.
 When the user asks to add a widget, use add_widget with the correct type name.
 When unsure, list available types first with list_widget_types.`,

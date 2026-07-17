@@ -47,19 +47,16 @@ export function BoardModal({ initialBoardId, onClose }: BoardModalProps) {
     [openBoard]
   )
 
-  const handleNavigateTo = useCallback(
-    (targetIndex: number) => {
-      const state = useStore.getState()
-      const stepsToClose = state.navigationStack.length - 1 - targetIndex
-      for (let i = 0; i < stepsToClose; i++) {
-        state.closeBoard()
-      }
-      if (targetIndex >= 0 && state.navigationStack[targetIndex]) {
-        setCurrentBoardId(state.navigationStack[targetIndex])
-      }
-    },
-    []
-  )
+  const handleNavigateTo = useCallback((targetIndex: number) => {
+    const state = useStore.getState()
+    const stepsToClose = state.navigationStack.length - 1 - targetIndex
+    for (let i = 0; i < stepsToClose; i++) {
+      state.closeBoard()
+    }
+    if (targetIndex >= 0 && state.navigationStack[targetIndex]) {
+      setCurrentBoardId(state.navigationStack[targetIndex])
+    }
+  }, [])
 
   const handleClose = useCallback(() => {
     // Read fresh state from store to avoid stale closure
@@ -80,7 +77,7 @@ export function BoardModal({ initialBoardId, onClose }: BoardModalProps) {
         if (state.navigationStack.length > 1) {
           const prevBoardId = state.navigationStack[state.navigationStack.length - 2]
           state.closeBoard()
-          setCurrentBoardId(prevBoardId)
+          setCurrentBoardId(prevBoardId!)
         } else {
           // Close all and unmount
           let stack = state.navigationStack
@@ -134,9 +131,10 @@ export function BoardModal({ initialBoardId, onClose }: BoardModalProps) {
                   }}
                   styles={{
                     root: {
-                      '&:hover': index !== breadcrumb.length - 1
-                        ? { backgroundColor: 'var(--wb-accent-subtle)' }
-                        : undefined,
+                      '&:hover':
+                        index !== breadcrumb.length - 1
+                          ? { backgroundColor: 'var(--wb-accent-subtle)' }
+                          : undefined,
                     },
                   }}
                 >
@@ -154,12 +152,7 @@ export function BoardModal({ initialBoardId, onClose }: BoardModalProps) {
               </Group>
             ))}
           </Group>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            size="sm"
-            onClick={handleClose}
-          >
+          <ActionIcon variant="subtle" color="gray" size="sm" onClick={handleClose}>
             <IconX size={16} />
           </ActionIcon>
         </Group>
@@ -167,10 +160,7 @@ export function BoardModal({ initialBoardId, onClose }: BoardModalProps) {
 
       {/* Canvas area */}
       <div style={{ flex: 1, overflow: 'hidden' }}>
-        <Canvas
-          boardId={currentBoardId}
-          onOpenBoard={handleOpenBoard}
-        />
+        <Canvas boardId={currentBoardId} onOpenBoard={handleOpenBoard} />
       </div>
 
       {/* Bottom toolbar */}

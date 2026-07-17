@@ -6,10 +6,11 @@ import { Onboarding } from './components/Onboarding'
 import { CommandPalette } from './components/CommandPalette'
 import { Breadcrumb } from './components/Breadcrumb'
 import { Minimap } from './components/Minimap'
+import { ToastContainer } from './components/Toast'
+import { SettingsModal } from './components/SettingsModal'
 
 const BoardModal = lazy(() => import('./components/BoardModal'))
 const ShortcutsModal = lazy(() => import('./components/ShortcutsModal'))
-const AgentPanel = lazy(() => import('./components/AgentPanel'))
 
 function ModalFallback() {
   return (
@@ -26,7 +27,8 @@ interface AppProps {
 
 function App({ onToggleScheme, scheme }: AppProps) {
   const [openBoardId, setOpenBoardId] = useState<string | null>(null)
-  const [agentOpened, setAgentOpened] = useState(false)
+  const [settingsOpened, setSettingsOpened] = useState(false)
+  const [paletteOpened, setPaletteOpened] = useState(false)
 
   const handleOpenBoard = useCallback((boardId: string) => {
     setOpenBoardId(boardId)
@@ -38,29 +40,61 @@ function App({ onToggleScheme, scheme }: AppProps) {
 
   return (
     <Box w="100%" h="100%" style={{ display: 'flex', flexDirection: 'column' }}>
+      <a
+        href="#canvas"
+        style={{
+          position: 'absolute',
+          width: 1,
+          height: 1,
+          padding: 0,
+          margin: -1,
+          overflow: 'hidden',
+          clip: 'rect(0, 0, 0, 0)',
+          whiteSpace: 'nowrap',
+          borderWidth: 0,
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.position = 'static'
+          e.currentTarget.style.width = 'auto'
+          e.currentTarget.style.height = 'auto'
+          e.currentTarget.style.overflow = 'visible'
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.position = 'absolute'
+          e.currentTarget.style.width = '1px'
+          e.currentTarget.style.height = '1px'
+          e.currentTarget.style.overflow = 'hidden'
+        }}
+      >
+        Skip to canvas
+      </a>
       <Toolbar
         onToggleScheme={onToggleScheme}
         scheme={scheme}
-        agentOpened={agentOpened}
-        onToggleAgent={() => setAgentOpened((o) => !o)}
+        onOpenSettings={() => setSettingsOpened(true)}
+        onOpenPalette={() => setPaletteOpened(true)}
       />
-      <Canvas onOpenBoard={handleOpenBoard} />
+      <main id="canvas" role="main" aria-label="Widget canvas" style={{ flex: 1 }}>
+        <Canvas onOpenBoard={handleOpenBoard} />
+      </main>
       <Breadcrumb />
       <Minimap />
       <Onboarding />
-      <CommandPalette onToggleScheme={onToggleScheme} scheme={scheme} />
+      <CommandPalette
+        open={paletteOpened}
+        onOpen={() => setPaletteOpened(true)}
+        onClose={() => setPaletteOpened(false)}
+      />
       <Suspense fallback={<ModalFallback />}>
         <ShortcutsModal />
-        <AgentPanel opened={agentOpened} onClose={() => setAgentOpened(false)} />
       </Suspense>
       {openBoardId && (
         <Suspense fallback={<ModalFallback />}>
-          <BoardModal
-            initialBoardId={openBoardId}
-            onClose={handleCloseBoard}
-          />
+          <BoardModal initialBoardId={openBoardId} onClose={handleCloseBoard} />
         </Suspense>
       )}
+      <ToastContainer />
+      <SettingsModal opened={settingsOpened} onClose={() => setSettingsOpened(false)} />
     </Box>
   )
 }

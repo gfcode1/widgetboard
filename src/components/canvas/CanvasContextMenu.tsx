@@ -12,7 +12,14 @@ interface CanvasContextMenuProps {
   onClose: () => void
 }
 
-export function CanvasContextMenu({ x, y, canvasX, canvasY, boardId = ROOT_BOARD_ID, onClose }: CanvasContextMenuProps) {
+export function CanvasContextMenu({
+  x,
+  y,
+  canvasX,
+  canvasY,
+  boardId = ROOT_BOARD_ID,
+  onClose,
+}: CanvasContextMenuProps) {
   const addText = useStore((s) => s.addText)
   const addShape = useStore((s) => s.addShape)
   const addArrow = useStore((s) => s.addArrow)
@@ -20,7 +27,6 @@ export function CanvasContextMenu({ x, y, canvasX, canvasY, boardId = ROOT_BOARD
 
   const handleAddText = () => {
     addText({
-      type: 'text',
       boardId,
       x: canvasX - 100,
       y: canvasY - 20,
@@ -36,7 +42,6 @@ export function CanvasContextMenu({ x, y, canvasX, canvasY, boardId = ROOT_BOARD
 
   const handleAddRectangle = () => {
     addShape({
-      type: 'shape',
       boardId,
       shape: 'rectangle',
       x: canvasX - 75,
@@ -53,7 +58,6 @@ export function CanvasContextMenu({ x, y, canvasX, canvasY, boardId = ROOT_BOARD
 
   const handleAddEllipse = () => {
     addShape({
-      type: 'shape',
       boardId,
       shape: 'ellipse',
       x: canvasX - 75,
@@ -70,7 +74,6 @@ export function CanvasContextMenu({ x, y, canvasX, canvasY, boardId = ROOT_BOARD
 
   const handleAddArrow = () => {
     addArrow({
-      type: 'arrow',
       boardId,
       startX: canvasX - 100,
       startY: canvasY,
@@ -85,14 +88,13 @@ export function CanvasContextMenu({ x, y, canvasX, canvasY, boardId = ROOT_BOARD
 
   const handleAddGroup = () => {
     addGroup({
-      type: 'group',
       boardId,
       x: canvasX - 200,
       y: canvasY - 150,
       width: 400,
       height: 300,
       title: 'New Group',
-      color: GROUP_COLORS[Math.floor(Math.random() * GROUP_COLORS.length)],
+      color: GROUP_COLORS[Math.floor(Math.random() * GROUP_COLORS.length)]!,
       widgetIds: [],
       collapsed: false,
     })
@@ -140,7 +142,9 @@ export function CanvasContextMenu({ x, y, canvasX, canvasY, boardId = ROOT_BOARD
         >
           <Group gap="xs">
             <item.icon size={14} color="var(--wb-text-dimmed)" />
-            <Text size="sm" c="gray.3" fw={500}>{item.label}</Text>
+            <Text size="sm" c="gray.3" fw={500}>
+              {item.label}
+            </Text>
           </Group>
         </UnstyledButton>
       ))}

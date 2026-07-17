@@ -1,6 +1,6 @@
-import { memo, useState } from 'react'
-import { Text, Stack, Group, Select, ActionIcon, Chip } from '@mantine/core'
-import { IconPlus, IconX } from '@tabler/icons-react'
+import { memo, useState, useMemo } from 'react'
+import { Text, Stack, Group, Select, ActionIcon, Chip, Badge } from '@mantine/core'
+import { IconPlus, IconX, IconSun, IconMoon } from '@tabler/icons-react'
 import type { Widget } from '../types'
 import { useStore } from '../store/useStore'
 import { useGlobalTick } from '../hooks/useGlobalTick'
@@ -19,7 +19,6 @@ const TIMEZONE_CITIES = [
   { value: 'America/New_York', label: 'New York (UTC-5/-4)' },
   { value: 'America/Halifax', label: 'Halifax (UTC-4/-3)' },
   { value: 'America/Sao_Paulo', label: 'São Paulo (UTC-3)' },
-  { value: 'Atlantic/South_Georgia', label: 'South Georgia (UTC-2)' },
   { value: 'Atlantic/Azores', label: 'Azores (UTC-1/+0)' },
   { value: 'Europe/London', label: 'London (UTC+0/+1)' },
   { value: 'Europe/Paris', label: 'Paris (UTC+1/+2)' },
@@ -36,22 +35,21 @@ const TIMEZONE_CITIES = [
   { value: 'Pacific/Auckland', label: 'Auckland (UTC+12/+13)' },
 ]
 
-function formatClockTime(timezone: string, use12h: boolean, now: Date): string {
+function formatTime(timezone: string, use12h: boolean, now: Date): string {
   try {
-    const opts: Intl.DateTimeFormatOptions = {
+    return new Intl.DateTimeFormat(undefined, {
       timeZone: timezone,
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
       hour12: use12h,
-    }
-    return new Intl.DateTimeFormat(undefined, opts).format(now)
+    }).format(now)
   } catch {
     return '--:--:--'
   }
 }
 
-function formatClockDate(timezone: string, now: Date): string {
+function formatDate(timezone: string, now: Date): string {
   try {
     return new Intl.DateTimeFormat(undefined, {
       timeZone: timezone,
@@ -64,35 +62,92 @@ function formatClockDate(timezone: string, now: Date): string {
   }
 }
 
+function getHourOffset(timezone: string, now: Date): number {
+  try {
+    const localTime = now.getTime()
+    const tzString = new Intl.DateTimeFormat(undefined, {
+      timeZone: timezone,
+      timeZoneName: 'shortOffset',
+    }).format(now)
+    const match = tzString.match(/GMT([+-]\d+)/)
+    if (match) return parseInt(match[1]!, 10)
+    const tzTime = new Date(
+      new Intl.DateTimeFormat(undefined, {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      }).format(now)
+    ).getTime()
+    return Math.round((tzTime - localTime) / 3600000)
+  } catch {
+    return 0
+  }
+}
+
+function getLocalHourOffset(): number {
+  return -new Date().getTimezoneOffset() / 60
+}
+
 function getCityName(timezone: string): string {
   return timezone.split('/').pop()?.replace(/_/g, ' ') || timezone
 }
 
+function isDaytime(timezone: string, now: Date): boolean {
+  try {
+    const hour = parseInt(
+      new Intl.DateTimeFormat(undefined, {
+        timeZone: timezone,
+        hour: '2-digit',
+        hour12: false,
+      }).format(now),
+      10
+    )
+    return hour >= 6 && hour < 18
+  } catch {
+    return true
+  }
+}
+
 export const WorldClockWidget = memo(function WorldClockWidget({ widget }: Props) {
   const updateWidget = useStore((s) => s.updateWidget)
-  const content = widget.content.type === 'worldclock' ? widget.content : { type: 'worldclock' as const, clocks: [] }
+  const content =
+    widget.content.type === 'worldclock'
+      ? widget.content
+      : { type: 'worldclock' as const, clocks: [] }
   const now = useGlobalTick()
   const [adding, setAdding] = useState(false)
   const [selectedTimezone, setSelectedTimezone] = useState<string | null>(null)
 
+  const localOffset = useMemo(() => getLocalHourOffset(), [])
+
   const addClock = () => {
     if (!selectedTimezone) return
     const cityName = getCityName(selectedTimezone)
-    const newClocks = [...content.clocks, { city: cityName, timezone: selectedTimezone, use12h: false }]
+    const newClocks = [
+      ...content.clocks,
+      { city: cityName, timezone: selectedTimezone, use12h: false },
+    ]
     updateWidget(widget.id, { content: { ...content, clocks: newClocks } })
     setSelectedTimezone(null)
     setAdding(false)
   }
 
   const removeClock = (index: number) => {
-    updateWidget(widget.id, { content: { ...content, clocks: content.clocks.filter((_, i) => i !== index) } })
+    updateWidget(widget.id, {
+      content: { ...content, clocks: content.clocks.filter((_, i) => i !== index) },
+    })
   }
 
   const toggle12h = (index: number) => {
     updateWidget(widget.id, {
       content: {
         ...content,
-        clocks: content.clocks.map((c, i) => i === index ? { ...c, use12h: !c.use12h } : c),
+        clocks: content.clocks.map((c, i) => (i === index ? { ...c, use12h: !c.use12h } : c)),
       },
     })
   }
@@ -101,27 +156,52 @@ export const WorldClockWidget = memo(function WorldClockWidget({ widget }: Props
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: 8 }}>
       <Stack gap={4} style={{ flex: 1, overflow: 'auto' }}>
         {content.clocks.map((clock, i) => {
-          const tz = (clock as { timezone?: string; offset?: number }).timezone
-          const displayTz = tz || 'UTC'
+          const tz = (clock as { timezone?: string }).timezone || 'UTC'
+          const offset = getHourOffset(tz, now)
+          const relDiff = offset - localOffset
+          const day = isDaytime(tz, now)
+
           return (
             <Group
               key={`${clock.city}-${i}`}
               justify="space-between"
               px="xs"
-              py={4}
+              py={6}
               style={{
                 borderRadius: 'var(--mantine-radius-md)',
                 backgroundColor: 'var(--mantine-color-dark-8)',
+                transition: 'all 150ms ease',
               }}
             >
               <div>
-                <Text size="xs" c="dimmed">{clock.city}</Text>
+                <Group gap={4}>
+                  {day ? (
+                    <IconSun size={10} style={{ color: 'var(--mantine-color-yellow-5)' }} />
+                  ) : (
+                    <IconMoon size={10} style={{ color: 'var(--mantine-color-blue-4)' }} />
+                  )}
+                  <Text size="xs" c="dimmed">
+                    {clock.city}
+                  </Text>
+                </Group>
                 <Text fw={500} c="gray.1" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  {formatClockTime(displayTz, clock.use12h, now)}
+                  {formatTime(tz, clock.use12h, now)}
                 </Text>
-                <Text size="xs" c="dimmed" style={{ fontSize: 9 }}>
-                  {formatClockDate(displayTz, now)}
-                </Text>
+                <Group gap={4}>
+                  <Text size="xs" c="dimmed" style={{ fontSize: 9 }}>
+                    {formatDate(tz, now)}
+                  </Text>
+                  {relDiff !== 0 && (
+                    <Badge
+                      size="xs"
+                      variant="light"
+                      color={relDiff > 0 ? 'green' : 'orange'}
+                      style={{ fontSize: 8, padding: '0 4px' }}
+                    >
+                      {relDiff > 0 ? `+${relDiff}h` : `${relDiff}h`}
+                    </Badge>
+                  )}
+                </Group>
               </div>
               <Group gap={2}>
                 <Chip
@@ -133,7 +213,13 @@ export const WorldClockWidget = memo(function WorldClockWidget({ widget }: Props
                 >
                   12h
                 </Chip>
-                <ActionIcon variant="subtle" color="red" size="xs" onClick={() => removeClock(i)} aria-label={`Remove ${clock.city}`}>
+                <ActionIcon
+                  variant="subtle"
+                  color="red"
+                  size="xs"
+                  onClick={() => removeClock(i)}
+                  aria-label={`Remove ${clock.city}`}
+                >
                   <IconX size={12} />
                 </ActionIcon>
               </Group>
@@ -158,7 +244,13 @@ export const WorldClockWidget = memo(function WorldClockWidget({ widget }: Props
             searchable
             flex={1}
           />
-          <ActionIcon variant="subtle" color="green" size="sm" onClick={addClock} aria-label="Add clock">
+          <ActionIcon
+            variant="subtle"
+            color="green"
+            size="sm"
+            onClick={addClock}
+            aria-label="Add clock"
+          >
             <IconPlus size={14} />
           </ActionIcon>
         </Group>

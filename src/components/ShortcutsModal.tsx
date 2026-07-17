@@ -14,6 +14,7 @@ const SHORTCUTS: Shortcut[] = [
   { keys: ['Delete'], description: 'Delete selected widget' },
   { keys: ['Ctrl', 'D'], description: 'Duplicate widget' },
   { keys: ['Escape'], description: 'Deselect / Close menu' },
+  { keys: ['Ctrl', 'K'], description: 'Command palette' },
   { keys: ['Ctrl', '0'], description: 'Zoom to fit' },
   { keys: ['Scroll'], description: 'Zoom in/out' },
   { keys: ['Click + Drag'], description: 'Pan canvas' },
@@ -39,7 +40,8 @@ export function ShortcutsModal() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable) return
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable)
+        return
 
       if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
         e.preventDefault()
@@ -77,7 +79,9 @@ export function ShortcutsModal() {
       <Group justify="space-between" mb="md">
         <Group gap="xs">
           <IconKeyboard size={18} style={{ color: 'var(--wb-accent)' }} />
-          <Text size="lg" fw={600} c="gray.1">Keyboard Shortcuts</Text>
+          <Text size="lg" fw={600} c="gray.1">
+            Keyboard Shortcuts
+          </Text>
         </Group>
         <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => setOpened(false)}>
           <IconX size={16} />
@@ -96,7 +100,9 @@ export function ShortcutsModal() {
               backgroundColor: i % 2 === 0 ? 'var(--wb-surface-hover)' : 'transparent',
             }}
           >
-            <Text size="sm" c="gray.3">{shortcut.description}</Text>
+            <Text size="sm" c="gray.3">
+              {shortcut.description}
+            </Text>
             <Group gap={4}>
               {shortcut.keys.map((key, ki) => (
                 <Kbd
@@ -116,7 +122,17 @@ export function ShortcutsModal() {
       </Stack>
 
       <Text size="xs" c="dimmed" ta="center" mt="md">
-        Press <Kbd style={{ backgroundColor: 'var(--mantine-color-dark-6)', border: '1px solid var(--wb-border)', color: 'var(--mantine-color-gray-3)' }}>?</Kbd> to toggle this panel
+        Press{' '}
+        <Kbd
+          style={{
+            backgroundColor: 'var(--mantine-color-dark-6)',
+            border: '1px solid var(--wb-border)',
+            color: 'var(--mantine-color-gray-3)',
+          }}
+        >
+          ?
+        </Kbd>{' '}
+        to toggle this panel
       </Text>
     </Paper>
   )

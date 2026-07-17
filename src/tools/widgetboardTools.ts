@@ -3,7 +3,7 @@ import { z } from 'zod/v4'
 import { v4 as uuidv4 } from 'uuid'
 import { useStore, ROOT_BOARD_ID } from '../store/useStore'
 import { WIDGET_MAP } from '../widgets/registry'
-import type { WidgetType } from '../types'
+import type { WidgetType, WidgetContent } from '../types'
 
 const WIDGET_TYPES = Object.keys(WIDGET_MAP) as WidgetType[]
 
@@ -55,7 +55,11 @@ export const widgetboardTools = {
       x: z.number().optional().describe('X position on canvas. If omitted, auto-placed.'),
       y: z.number().optional().describe('Y position on canvas. If omitted, auto-placed.'),
     }),
-    execute: async function (this: PageAgentCore, input, ctx) {
+    execute: async function (
+      this: PageAgentCore,
+      input: { type: string; x?: number; y?: number },
+      ctx
+    ) {
       ctx.signal.throwIfAborted()
       const state = useStore.getState()
       const boardId = state.currentBoardId ?? ROOT_BOARD_ID
@@ -84,11 +88,17 @@ export const widgetboardTools = {
       if (hasOverlap) {
         for (let step = 1; step <= 30; step++) {
           for (const [dx, dy] of [
-            [step, 0], [-step, 0], [0, step], [0, -step],
-            [step, step], [-step, step], [step, -step], [-step, -step],
+            [step, 0],
+            [-step, 0],
+            [0, step],
+            [0, -step],
+            [step, step],
+            [-step, step],
+            [step, -step],
+            [-step, -step],
           ]) {
-            const cx = snap(x + dx * GRID)
-            const cy = snap(y + dy * GRID)
+            const cx = snap(x + dx! * GRID)
+            const cy = snap(y + dy! * GRID)
             const candidate = { x: cx, y: cy, width: meta.defaultWidth, height: meta.defaultHeight }
             const overlap = boardWidgets.some(
               (w) =>
@@ -137,7 +147,7 @@ export const widgetboardTools = {
     inputSchema: z.object({
       id: z.string().describe('The widget id to remove'),
     }),
-    execute: async function (this: PageAgentCore, input, ctx) {
+    execute: async function (this: PageAgentCore, input: { id: string }, ctx) {
       ctx.signal.throwIfAborted()
       const state = useStore.getState()
       const boardId = state.currentBoardId ?? ROOT_BOARD_ID
@@ -151,14 +161,17 @@ export const widgetboardTools = {
   }),
 
   move_widget: tool({
-    description:
-      'Move a widget to a new position on the canvas by its id.',
+    description: 'Move a widget to a new position on the canvas by its id.',
     inputSchema: z.object({
       id: z.string().describe('The widget id to move'),
       x: z.number().describe('New X position'),
       y: z.number().describe('New Y position'),
     }),
-    execute: async function (this: PageAgentCore, input, ctx) {
+    execute: async function (
+      this: PageAgentCore,
+      input: { id: string; x: number; y: number },
+      ctx
+    ) {
       ctx.signal.throwIfAborted()
       const state = useStore.getState()
       const boardId = state.currentBoardId ?? ROOT_BOARD_ID
@@ -181,7 +194,11 @@ export const widgetboardTools = {
       id: z.string().describe('The widget id to update'),
       content: z.record(z.string(), z.any()).describe('Partial content fields to update'),
     }),
-    execute: async function (this: PageAgentCore, input, ctx) {
+    execute: async function (
+      this: PageAgentCore,
+      input: { id: string; content: Record<string, unknown> },
+      ctx
+    ) {
       ctx.signal.throwIfAborted()
       const state = useStore.getState()
       const boardId = state.currentBoardId ?? ROOT_BOARD_ID
@@ -190,7 +207,7 @@ export const widgetboardTools = {
         return `Widget with id "${input.id}" not found.`
       }
       const newContent = { ...widget.content, ...input.content }
-      state.updateWidget(input.id, { content: newContent as any })
+      state.updateWidget(input.id, { content: newContent as WidgetContent })
       return `Updated ${widget.type} widget (id: ${input.id}).`
     },
   }),

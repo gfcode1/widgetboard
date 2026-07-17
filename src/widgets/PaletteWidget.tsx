@@ -1,89 +1,122 @@
-import { memo, useState, useCallback } from 'react'
-import { Text, Group, ActionIcon, Tooltip } from '@mantine/core'
-import { IconRefresh, IconLock, IconLockOpen, IconCopy, IconCheck } from '@tabler/icons-react'
+import { memo, useState, useCallback, useMemo } from 'react'
+import { Text, Group, ActionIcon, Tooltip, Select, Badge } from '@mantine/core'
+import {
+  IconRefresh,
+  IconLock,
+  IconLockOpen,
+  IconCopy,
+  IconCheck,
+  IconDownload,
+} from '@tabler/icons-react'
 import type { Widget } from '../types'
 import { useStore } from '../store/useStore'
 import { WidgetHeader } from './base/WidgetHeader'
+import {
+  generatePalette,
+  generateAnalogousPalette,
+  generateComplementaryPalette,
+  generateTriadicPalette,
+  generateMonochromaticPalette,
+  hslToHex,
+  getContrastRatio,
+} from '../utils/colors'
+import { copyToClipboard } from '../utils/clipboard'
 
 interface Props {
   widget: Widget
 }
 
-function generatePalette(count: number): string[] {
-  const baseHue = Math.random() * 360
-  return Array.from({ length: count }, (_, i) => {
-    const hue = (baseHue + (i * 360) / count) % 360
-    const sat = 55 + Math.random() * 30
-    const light = 45 + Math.random() * 20
-    return `hsl(${Math.round(hue)}, ${Math.round(sat)}%, ${Math.round(light)}%)`
-  })
-}
+type GenerationMode = 'random' | 'analogous' | 'complementary' | 'triadic' | 'monochromatic'
 
-function hslToHex(hsl: string): string {
-  const match = hsl.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/)
-  if (!match) return hsl
-  const h = Number(match[1]) / 360
-  const s = Number(match[2]) / 100
-  const l = Number(match[3]) / 100
-  let r = 0, g = 0, b = 0
-  if (s === 0) {
-    r = g = b = l
-  } else {
-    const hue2rgb = (p: number, q: number, t: number) => {
-      if (t < 0) t += 1
-      if (t > 1) t -= 1
-      if (t < 1 / 6) return p + (q - p) * 6 * t
-      if (t < 1 / 2) return q
-      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
-      return p
-    }
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s
-    const p = 2 * l - q
-    r = hue2rgb(p, q, h + 1 / 3)
-    g = hue2rgb(p, q, h)
-    b = hue2rgb(p, q, h - 1 / 3)
+const MODES: { value: GenerationMode; label: string }[] = [
+  { value: 'random', label: 'Random' },
+  { value: 'analogous', label: 'Analogous' },
+  { value: 'complementary', label: 'Complementary' },
+  { value: 'triadic', label: 'Triadic' },
+  { value: 'monochromatic', label: 'Monochromatic' },
+]
+
+function generateByMode(mode: GenerationMode, count: number): string[] {
+  switch (mode) {
+    case 'random':
+      return generatePalette(count)
+    case 'analogous':
+      return generateAnalogousPalette(count)
+    case 'complementary':
+      return generateComplementaryPalette()
+    case 'triadic':
+      return generateTriadicPalette()
+    case 'monochromatic':
+      return generateMonochromaticPalette(count)
   }
-  const toHex = (c: number) => Math.round(c * 255).toString(16).padStart(2, '0')
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
 }
 
 export const PaletteWidget = memo(function PaletteWidget({ widget }: Props) {
   const updateWidget = useStore((s) => s.updateWidget)
   const [editing, setEditing] = useState(false)
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null)
-  const content = widget.content.type === 'palette'
-    ? widget.content
-    : { type: 'palette' as const, colors: generatePalette(5), name: 'Palette', locked: [false, false, false, false, false] }
+  const [genMode, setGenMode] = useState<GenerationMode>('random')
+  const content =
+    widget.content.type === 'palette'
+      ? widget.content
+      : {
+          type: 'palette' as const,
+          colors: generatePalette(5),
+          name: 'Palette',
+          locked: [false, false, false, false, false],
+        }
 
   const regenerate = useCallback(() => {
-    const newColors = content.colors.map((c, idx) => content.locked[idx] ? c : null).map((c) => {
-      if (c) return c
-      return generatePalette(1)[0]
-    })
-    updateWidget(widget.id, {
-      content: { ...content, colors: newColors },
-    })
-  }, [widget.id, content, updateWidget])
+    const newColors = content.colors
+      .map((c, idx) => (content.locked[idx] ? c : null))
+      .map((c, idx): string => {
+        if (c) return c
+        const fresh = generateByMode(genMode, content.colors.length)
+        return fresh[idx] ?? generatePalette(1)[0]!
+      })
+    updateWidget(widget.id, { content: { ...content, colors: newColors } })
+  }, [widget.id, content, genMode, updateWidget])
 
-  const toggleLock = useCallback((idx: number) => {
-    const newLocked = [...content.locked]
-    newLocked[idx] = !newLocked[idx]
-    updateWidget(widget.id, {
-      content: { ...content, locked: newLocked },
-    })
-  }, [widget.id, content, updateWidget])
+  const toggleLock = useCallback(
+    (idx: number) => {
+      const newLocked = [...content.locked]
+      newLocked[idx] = !newLocked[idx]
+      updateWidget(widget.id, { content: { ...content, locked: newLocked } })
+    },
+    [widget.id, content, updateWidget]
+  )
 
   const copyHex = useCallback((color: string, idx: number) => {
     const hex = hslToHex(color)
-    navigator.clipboard.writeText(hex).catch(() => {})
+    copyToClipboard(hex)
     setCopiedIdx(idx)
     setTimeout(() => setCopiedIdx(null), 1500)
   }, [])
 
   const exportCss = useCallback(() => {
     const css = content.colors.map((c, i) => `  --palette-${i + 1}: ${hslToHex(c)};`).join('\n')
-    navigator.clipboard.writeText(`:root {\n${css}\n}`).catch(() => {})
+    copyToClipboard(`:root {\n${css}\n}`)
   }, [content.colors])
+
+  const exportTailwind = useCallback(() => {
+    const config = content.colors.map((c, i) => `        ${i + 1}00: '${hslToHex(c)}',`).join('\n')
+    copyToClipboard(`colors: {\n  palette: {\n${config}\n  }\n}`)
+  }, [content.colors])
+
+  const contrastRatios = useMemo(
+    () =>
+      content.colors.map((c) => {
+        const hex = hslToHex(c)
+        const onWhite = getContrastRatio(hex, '#ffffff')
+        const onBlack = getContrastRatio(hex, '#000000')
+        return {
+          hex,
+          onWhite: Math.round(onWhite * 10) / 10,
+          onBlack: Math.round(onBlack * 10) / 10,
+        }
+      }),
+    [content.colors]
+  )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -94,63 +127,156 @@ export const PaletteWidget = memo(function PaletteWidget({ widget }: Props) {
         icon={<IconRefresh size={12} />}
         rightSlot={
           <Group gap={4}>
-            <ActionIcon variant="subtle" color="gray" size="xs" onClick={regenerate} onMouseDown={(e) => e.stopPropagation()}>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="xs"
+              onClick={regenerate}
+              onMouseDown={(e) => e.stopPropagation()}
+              aria-label="Regenerate"
+            >
               <IconRefresh size={12} />
             </ActionIcon>
-            <ActionIcon variant="subtle" color="gray" size="xs" onClick={exportCss} onMouseDown={(e) => e.stopPropagation()}>
-              <IconCopy size={12} />
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="xs"
+              onClick={exportCss}
+              onMouseDown={(e) => e.stopPropagation()}
+              aria-label="Export CSS"
+            >
+              <IconDownload size={12} />
             </ActionIcon>
           </Group>
         }
       />
       <div style={{ flex: 1, overflow: 'auto', padding: 8 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, height: '100%' }}>
-          {content.colors.map((color, i) => (
-            <Tooltip key={i} label={copiedIdx === i ? 'Copied!' : hslToHex(color)} position="right" withArrow>
-              <div
-                className="palette-swatch"
-                style={{
-                  flex: 1,
-                  borderRadius: 'var(--wb-radius-sm)',
-                  backgroundColor: color,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'transform var(--wb-transition-fast)',
-                  position: 'relative',
-                  minHeight: 24,
-                }}
-                onClick={() => copyHex(color, i)}
-                onMouseDown={(e) => e.stopPropagation()}
+        {editing ? (
+          <Group gap="xs" mb={8}>
+            <Select
+              data={MODES}
+              value={genMode}
+              onChange={(v) => v && setGenMode(v as GenerationMode)}
+              size="xs"
+              w={140}
+              onMouseDown={(e) => e.stopPropagation()}
+            />
+            <Tooltip label="Export CSS">
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="xs"
+                onClick={exportCss}
+                aria-label="Export CSS"
               >
-                {copiedIdx === i ? (
-                  <IconCheck size={14} color="white" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />
-                ) : (
-                  <Group gap={4} style={{ opacity: 0 }}>
-                    <ActionIcon
-                      size="xs"
-                      variant="subtle"
-                      color="white"
-                      onClick={(e) => { e.stopPropagation(); toggleLock(i) }}
-                      onMouseDown={(e) => e.stopPropagation()}
-                      style={{ pointerEvents: 'auto' }}
-                    >
-                      {content.locked[i] ? <IconLock size={10} /> : <IconLockOpen size={10} />}
-                    </ActionIcon>
-                    <Text size="xs" c="white" fw={500} style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
-                      {hslToHex(color)}
-                    </Text>
-                  </Group>
-                )}
-              </div>
+                <IconCopy size={12} />
+              </ActionIcon>
             </Tooltip>
-          ))}
+            <Tooltip label="Export Tailwind">
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="xs"
+                onClick={exportTailwind}
+                aria-label="Export Tailwind"
+              >
+                <IconDownload size={12} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+        ) : null}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+            height: editing ? 'auto' : '100%',
+          }}
+        >
+          {content.colors.map((color, i) => {
+            const cr = contrastRatios[i]
+            return (
+              <Tooltip
+                key={i}
+                label={
+                  copiedIdx === i
+                    ? 'Copied!'
+                    : `${cr?.hex ?? hslToHex(color)} | AA: ${(cr?.onWhite ?? 0) >= 4.5 ? 'yes' : 'no'}`
+                }
+                position="right"
+                withArrow
+              >
+                <div
+                  className="palette-swatch"
+                  style={{
+                    flex: editing ? undefined : 1,
+                    height: editing ? 40 : undefined,
+                    borderRadius: 'var(--wb-radius-sm)',
+                    backgroundColor: color,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'transform var(--wb-transition-fast)',
+                    position: 'relative',
+                    minHeight: 28,
+                  }}
+                  onClick={() => copyHex(color, i)}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && copyHex(color, i)}
+                  aria-label={`Color ${i + 1}: ${cr?.hex ?? hslToHex(color)}`}
+                >
+                  {copiedIdx === i ? (
+                    <IconCheck
+                      size={14}
+                      color="white"
+                      style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}
+                    />
+                  ) : (
+                    <Group gap={4} className="palette-meta" style={{ opacity: 0 }}>
+                      <ActionIcon
+                        size="xs"
+                        variant="subtle"
+                        color="white"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleLock(i)
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        style={{ pointerEvents: 'auto' }}
+                        aria-label={content.locked[i] ? 'Unlock color' : 'Lock color'}
+                      >
+                        {content.locked[i] ? <IconLock size={10} /> : <IconLockOpen size={10} />}
+                      </ActionIcon>
+                      <Text
+                        size="xs"
+                        c="white"
+                        fw={500}
+                        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+                      >
+                        {cr?.hex ?? hslToHex(color)}
+                      </Text>
+                      <Badge
+                        size="xs"
+                        variant="filled"
+                        color={(cr?.onWhite ?? 0) >= 4.5 ? 'green' : 'red'}
+                        style={{ fontSize: 8, padding: '0 4px' }}
+                      >
+                        {(cr?.onWhite ?? 0) >= 4.5 ? 'AA' : 'X'}
+                      </Badge>
+                    </Group>
+                  )}
+                </div>
+              </Tooltip>
+            )
+          })}
         </div>
       </div>
       <style>{`
         .palette-swatch:hover { transform: scale(1.02); }
-        .palette-swatch:hover > div:last-child { opacity: 1 !important; }
+        .palette-swatch:hover .palette-meta { opacity: 1 !important; }
       `}</style>
     </div>
   )

@@ -1,40 +1,104 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useStore } from '../store/useStore'
 
 export function useCanvasZoom(canvasRef: React.RefObject<HTMLDivElement | null>) {
-  const canvasScale = useStore((s) => s.canvasScale)
-  const canvasOffset = useStore((s) => s.canvasOffset)
   const setCanvasTransform = useStore((s) => s.setCanvasTransform)
+  const animRef = useRef<number | null>(null)
+  const rafRef = useRef<number | null>(null)
+  const pendingRef = useRef<{ offsetX: number; offsetY: number; scale: number } | null>(null)
+
+  const cancelAnimation = useCallback(() => {
+    if (animRef.current !== null) {
+      cancelAnimationFrame(animRef.current)
+      animRef.current = null
+    }
+  }, [])
+
+  const animateTo = useCallback(
+    (targetOffset: { x: number; y: number }, targetScale: number, duration = 250) => {
+      cancelAnimation()
+      const state = useStore.getState()
+      const startOffset = { ...state.canvasOffset }
+      const startScale = state.canvasScale
+      const startTime = performance.now()
+
+      const step = (now: number) => {
+        const t = Math.min(1, (now - startTime) / duration)
+        const eased = 1 - Math.pow(1 - t, 3)
+
+        setCanvasTransform(
+          {
+            x: startOffset.x + (targetOffset.x - startOffset.x) * eased,
+            y: startOffset.y + (targetOffset.y - startOffset.y) * eased,
+          },
+          startScale + (targetScale - startScale) * eased
+        )
+
+        if (t < 1) {
+          animRef.current = requestAnimationFrame(step)
+        } else {
+          animRef.current = null
+        }
+      }
+
+      animRef.current = requestAnimationFrame(step)
+    },
+    [setCanvasTransform, cancelAnimation]
+  )
+
+  const flushPending = useCallback(() => {
+    if (pendingRef.current) {
+      const { offsetX, offsetY, scale } = pendingRef.current
+      pendingRef.current = null
+      setCanvasTransform({ x: offsetX, y: offsetY }, scale)
+    }
+  }, [setCanvasTransform])
 
   const handleWheel = useCallback(
     (e: WheelEvent) => {
       e.preventDefault()
       if (!canvasRef.current) return
+
+      const { canvasScale, canvasOffset } = useStore.getState()
+
+      cancelAnimation()
+
+      if (e.shiftKey) {
+        const isPixelMode = e.deltaMode === 0
+        const multiplier = isPixelMode ? 1 : 20
+        setCanvasTransform(
+          {
+            x: canvasOffset.x - e.deltaY * multiplier,
+            y: canvasOffset.y,
+          },
+          canvasScale
+        )
+        return
+      }
+
       const rect = canvasRef.current.getBoundingClientRect()
       const mouseX = e.clientX - rect.left
       const mouseY = e.clientY - rect.top
 
-      // Mouse wheel: deltaY ≥ 50 → fixed step (50% slower than before)
-      // Trackpad: deltaY < 50 → proportional to actual delta for smooth zoom
-      const absDelta = Math.abs(e.deltaY)
-      let delta: number
-      if (absDelta >= 50) {
-        delta = e.deltaY > 0 ? -0.04 : 0.04
-      } else {
-        delta = -e.deltaY * 0.004
-      }
-      const newScale = Math.min(2, Math.max(0.1, canvasScale + delta))
-      const ratio = newScale / canvasScale
+      const isPixelMode = e.deltaMode === 0
+      const rawDelta = isPixelMode ? e.deltaY : Math.sign(e.deltaY) * 50
+      const factor = Math.pow(0.999, rawDelta)
+      const newScale = Math.min(2, Math.max(0.1, canvasScale * factor))
 
-      setCanvasTransform(
-        {
-          x: mouseX - (mouseX - canvasOffset.x) * ratio,
-          y: mouseY - (mouseY - canvasOffset.y) * ratio,
-        },
-        newScale
-      )
+      if (newScale === canvasScale) return
+
+      const ratio = newScale / canvasScale
+      const offsetX = mouseX - (mouseX - canvasOffset.x) * ratio
+      const offsetY = mouseY - (mouseY - canvasOffset.y) * ratio
+
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      pendingRef.current = { offsetX, offsetY, scale: newScale }
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null
+        flushPending()
+      })
     },
-    [canvasScale, canvasOffset, setCanvasTransform, canvasRef]
+    [canvasRef, cancelAnimation, setCanvasTransform, flushPending]
   )
 
   useEffect(() => {
@@ -47,13 +111,12 @@ export function useCanvasZoom(canvasRef: React.RefObject<HTMLDivElement | null>)
   const centerCanvas = useCallback(() => {
     if (!canvasRef.current) return
     const rect = canvasRef.current.getBoundingClientRect()
-    setCanvasTransform(
-      { x: rect.width / 2, y: rect.height / 2 },
-      0.6
-    )
-  }, [setCanvasTransform, canvasRef])
+    animateTo({ x: rect.width / 2, y: rect.height / 2 }, 0.6)
+  }, [animateTo, canvasRef])
 
   return {
     centerCanvas,
+    animateTo,
+    cancelAnimation,
   }
 }

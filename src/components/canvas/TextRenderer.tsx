@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, memo } from 'react'
 import { useStore } from '../../store/useStore'
 import type { TextElement } from '../../types'
 
@@ -9,37 +9,48 @@ interface TextRendererProps {
   onSelect: (id: string) => void
 }
 
-export function TextRenderer({ element, scale, isSelected, onSelect }: TextRendererProps) {
+export const TextRenderer = memo(function TextRenderer({
+  element,
+  scale,
+  isSelected,
+  onSelect,
+}: TextRendererProps) {
   const updateText = useStore((s) => s.updateText)
   const setSelectedElement = useStore((s) => s.setSelectedElement)
   const [isDragging, setIsDragging] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const dragRef = useRef({ startX: 0, startY: 0, origX: 0, origY: 0 })
 
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    e.stopPropagation()
-    onSelect(element.id)
-    setSelectedElement(element.id)
-    setIsDragging(true)
-    dragRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      origX: element.x,
-      origY: element.y,
-    }
-    const target = e.currentTarget as HTMLElement
-    target.setPointerCapture(e.pointerId)
-  }, [element.id, element.x, element.y, onSelect, setSelectedElement])
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.stopPropagation()
+      onSelect(element.id)
+      setSelectedElement(element.id)
+      setIsDragging(true)
+      dragRef.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        origX: element.x,
+        origY: element.y,
+      }
+      const target = e.currentTarget as HTMLElement
+      target.setPointerCapture(e.pointerId)
+    },
+    [element.id, element.x, element.y, onSelect, setSelectedElement]
+  )
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDragging) return
-    const dx = (e.clientX - dragRef.current.startX) / scale
-    const dy = (e.clientY - dragRef.current.startY) / scale
-    updateText(element.id, {
-      x: dragRef.current.origX + dx,
-      y: dragRef.current.origY + dy,
-    })
-  }, [isDragging, scale, element.id, updateText])
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging) return
+      const dx = (e.clientX - dragRef.current.startX) / scale
+      const dy = (e.clientY - dragRef.current.startY) / scale
+      updateText(element.id, {
+        x: dragRef.current.origX + dx,
+        y: dragRef.current.origY + dy,
+      })
+    },
+    [isDragging, scale, element.id, updateText]
+  )
 
   const handlePointerUp = useCallback(() => {
     setIsDragging(false)
@@ -50,10 +61,13 @@ export function TextRenderer({ element, scale, isSelected, onSelect }: TextRende
     setIsEditing(true)
   }, [])
 
-  const handleBlur = useCallback((e: React.FocusEvent<HTMLTextAreaElement>) => {
-    setIsEditing(false)
-    updateText(element.id, { content: e.target.value })
-  }, [element.id, updateText])
+  const handleBlur = useCallback(
+    (e: React.FocusEvent<HTMLTextAreaElement>) => {
+      setIsEditing(false)
+      updateText(element.id, { content: e.target.value })
+    },
+    [element.id, updateText]
+  )
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -121,4 +135,4 @@ export function TextRenderer({ element, scale, isSelected, onSelect }: TextRende
       )}
     </div>
   )
-}
+})

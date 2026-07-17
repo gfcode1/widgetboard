@@ -35,12 +35,18 @@ export function findNonOverlappingPosition(
 
   for (let step = 1; step <= 50; step++) {
     const offsets = [
-      [step, 0], [-step, 0], [0, step], [0, -step],
-      [step, step], [-step, step], [step, -step], [-step, -step],
+      [step, 0],
+      [-step, 0],
+      [0, step],
+      [0, -step],
+      [step, step],
+      [-step, step],
+      [step, -step],
+      [-step, -step],
     ]
     for (const [dx, dy] of offsets) {
-      const testX = snap(proposedX + dx * GRID_SIZE)
-      const testY = snap(proposedY + dy * GRID_SIZE)
+      const testX = snap(proposedX + dx! * GRID_SIZE)
+      const testY = snap(proposedY + dy! * GRID_SIZE)
       const candidate = { ...widget, x: testX, y: testY }
       if (!others.some((other) => checkCollision(candidate, other))) {
         return { x: testX, y: testY }
@@ -58,5 +64,8 @@ export function defaultSize(type: WidgetType): { width: number; height: number }
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
   const scale = isMobile ? 0.75 : 1
   const meta = WIDGET_MAP[type]
-  return { width: Math.round(meta.defaultWidth * scale), height: Math.round(meta.defaultHeight * scale) }
+  return {
+    width: Math.round(meta.defaultWidth * scale),
+    height: Math.round(meta.defaultHeight * scale),
+  }
 }

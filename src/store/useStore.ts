@@ -8,10 +8,19 @@ import { createBoardSlice, type BoardSlice } from './boardSlice'
 import { createWidgetSlice, type WidgetSlice } from './widgetSlice'
 import { createExportSlice, type ExportSlice } from './exportSlice'
 import { createElementsSlice, type ElementsSlice } from './elementsSlice'
+import { createConnectionsSlice, type ConnectionsSlice } from './connectionsSlice'
+import { createIDBStorage } from './idbStorage'
 
 export type BoardsState = Record<string, Widget[]>
 
-export type WidgetStore = CanvasSlice & HistorySlice & SelectionSlice & BoardSlice & WidgetSlice & ExportSlice & ElementsSlice
+export type WidgetStore = CanvasSlice &
+  HistorySlice &
+  SelectionSlice &
+  BoardSlice &
+  WidgetSlice &
+  ExportSlice &
+  ElementsSlice &
+  ConnectionsSlice
 
 const ROOT_BOARD_ID = 'root'
 
@@ -35,10 +44,13 @@ export const useStore = create<WidgetStore>()(
       ...createWidgetSlice(...a),
       ...createExportSlice(...a),
       ...createElementsSlice(...a),
+      ...createConnectionsSlice(...a),
     }),
     {
       name: 'widgetboard-v3',
-      version: 4,
+      version: 5,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      storage: createIDBStorage() as any,
       migrate: (persisted: unknown, version: number | undefined) => {
         const data = persisted as Record<string, unknown>
         if (version === undefined || version < 2) {
@@ -59,7 +71,7 @@ export const useStore = create<WidgetStore>()(
         }
         if (version < 4) {
           const elements = Array.isArray(data.canvasElements)
-            ? (data.canvasElements as Array<Record<string, unknown>>).map(el => ({
+            ? (data.canvasElements as Array<Record<string, unknown>>).map((el) => ({
                 ...el,
                 boardId: el.boardId ?? 'root',
               }))
@@ -76,6 +88,12 @@ export const useStore = create<WidgetStore>()(
         snapEnabled: state.snapEnabled,
         collisionEnabled: state.collisionEnabled,
         canvasElements: state.canvasElements,
+        editMode: state.editMode,
+        currentBoardId: state.currentBoardId,
+        navigationStack: state.navigationStack,
+        canvasOffset: state.canvasOffset,
+        canvasScale: state.canvasScale,
+        connections: state.connections,
       }),
     }
   )

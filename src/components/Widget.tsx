@@ -1,10 +1,31 @@
-import { useRef, useCallback, useState, Suspense, lazy } from 'react'
-import { Skeleton } from '@mantine/core'
+import {
+  useRef,
+  useCallback,
+  useState,
+  useMemo,
+  Suspense,
+  lazy,
+  memo,
+  createContext,
+  useContext,
+} from 'react'
+import { Skeleton, Text, Paper } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import { useDraggable } from '@dnd-kit/core'
 import type { Widget as WidgetType } from '../types'
 import { useStore } from '../store/useStore'
 import { WidgetErrorBoundary } from './WidgetErrorBoundary'
+
+export interface WidgetContextValue {
+  widgetId: string
+  boardId: string
+}
+
+export const WidgetContext = createContext<WidgetContextValue>({ widgetId: '', boardId: '' })
+
+export function useWidgetContext() {
+  return useContext(WidgetContext)
+}
 
 const NoteWidget = lazy(() => import('../widgets/NoteWidget'))
 const ClockWidget = lazy(() => import('../widgets/ClockWidget'))
@@ -19,8 +40,7 @@ const WorldClockWidget = lazy(() => import('../widgets/WorldClockWidget'))
 const TodoWidget = lazy(() => import('../widgets/TodoWidget'))
 const CalendarWidget = lazy(() => import('../widgets/CalendarWidget'))
 const SearchWidget = lazy(() => import('../widgets/SearchWidget'))
-// BoardWidget loaded separately due to extra onOpenBoard prop
-import { BoardWidget } from '../widgets/BoardWidget'
+const BoardWidget = lazy(() => import('../widgets/BoardWidget'))
 const BookmarkWidget = lazy(() => import('../widgets/BookmarkWidget'))
 const QuoteWidget = lazy(() => import('../widgets/QuoteWidget'))
 const ClipboardWidget = lazy(() => import('../widgets/ClipboardWidget'))
@@ -31,6 +51,8 @@ const RssWidget = lazy(() => import('../widgets/RssWidget'))
 const CountdownWidget = lazy(() => import('../widgets/CountdownWidget'))
 const PomodoroStatsWidget = lazy(() => import('../widgets/PomodoroStatsWidget'))
 const HabitWidget = lazy(() => import('../widgets/HabitWidget'))
+const TimerWidget = lazy(() => import('../widgets/TimerWidget'))
+const KanbanWidget = lazy(() => import('../widgets/KanbanWidget'))
 
 interface WidgetProps {
   widget: WidgetType
@@ -42,7 +64,12 @@ interface WidgetProps {
   onOpenBoard?: (boardId: string) => void
 }
 
-const widgetComponents: Record<string, React.LazyExoticComponent<React.ComponentType<{ widget: WidgetType }>>> = {
+const widgetComponents: Record<
+  string,
+  React.LazyExoticComponent<
+    React.ComponentType<{ widget: WidgetType; onOpenBoard?: (boardId: string) => void }>
+  >
+> = {
   note: NoteWidget,
   clock: ClockWidget,
   link: LinkWidget,
@@ -56,6 +83,7 @@ const widgetComponents: Record<string, React.LazyExoticComponent<React.Component
   todo: TodoWidget,
   calendar: CalendarWidget,
   search: SearchWidget,
+  board: BoardWidget,
   bookmark: BookmarkWidget,
   quote: QuoteWidget,
   clipboard: ClipboardWidget,
@@ -66,6 +94,8 @@ const widgetComponents: Record<string, React.LazyExoticComponent<React.Component
   countdown: CountdownWidget,
   'pomodoro-stats': PomodoroStatsWidget,
   habit: HabitWidget,
+  timer: TimerWidget,
+  kanban: KanbanWidget,
 }
 
 function WidgetSkeleton({ width, height }: { width: number; height: number }) {
@@ -82,17 +112,36 @@ function WidgetSkeleton({ width, height }: { width: number; height: number }) {
 type ResizeDirection = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'left' | 'right'
 
 const resizeHandles: { dir: ResizeDirection; cursor: string; style: React.CSSProperties }[] = [
-  { dir: 'top-left', cursor: 'nwse-resize', style: { top: -4, left: -4 } },
-  { dir: 'top-right', cursor: 'nesw-resize', style: { top: -4, right: -4 } },
-  { dir: 'bottom-left', cursor: 'nesw-resize', style: { bottom: -4, left: -4 } },
-  { dir: 'bottom-right', cursor: 'nwse-resize', style: { bottom: -4, right: -4 } },
-  { dir: 'left', cursor: 'ew-resize', style: { top: '50%', left: -4, transform: 'translateY(-50%)' } },
-  { dir: 'right', cursor: 'ew-resize', style: { top: '50%', right: -4, transform: 'translateY(-50%)' } },
+  { dir: 'top-left', cursor: 'nwse-resize', style: { top: -5, left: -5 } },
+  { dir: 'top-right', cursor: 'nesw-resize', style: { top: -5, right: -5 } },
+  { dir: 'bottom-left', cursor: 'nesw-resize', style: { bottom: -5, left: -5 } },
+  { dir: 'bottom-right', cursor: 'nwse-resize', style: { bottom: -5, right: -5 } },
+  {
+    dir: 'left',
+    cursor: 'ew-resize',
+    style: { top: '50%', left: -5, transform: 'translateY(-50%)' },
+  },
+  {
+    dir: 'right',
+    cursor: 'ew-resize',
+    style: { top: '50%', right: -5, transform: 'translateY(-50%)' },
+  },
 ]
 
-export function Widget({ widget, scale, isSelected, onSelect, onContextMenu, onOpenBoard }: WidgetProps) {
+export const Widget = memo(function Widget({
+  widget,
+  scale,
+  isSelected,
+  onSelect,
+  onContextMenu,
+  boardId,
+  onOpenBoard,
+}: WidgetProps) {
   const resizeWidgetWithPosition = useStore((s) => s.resizeWidgetWithPosition)
+  const forcePushHistory = useStore((s) => s.forcePushHistory)
+  const editMode = useStore((s) => s.editMode)
   const [resizing, setResizing] = useState(false)
+  const [resizeSize, setResizeSize] = useState<{ w: number; h: number } | null>(null)
   const resizeRef = useRef({
     startX: 0,
     startY: 0,
@@ -107,6 +156,7 @@ export function Widget({ widget, scale, isSelected, onSelect, onContextMenu, onO
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: widget.id,
     data: { widgetId: widget.id, widgetX: widget.x, widgetY: widget.y },
+    disabled: !editMode,
   })
 
   const handleResizeStart = useCallback(
@@ -157,30 +207,41 @@ export function Widget({ widget, scale, isSelected, onSelect, onContextMenu, onO
       }
 
       resizeWidgetWithPosition(widget.id, newX, newY, newW, newH)
+      setResizeSize({ w: newW, h: newH })
     },
     [resizing, scale, widget.id, resizeWidgetWithPosition]
   )
 
   const handleResizeEnd = useCallback(() => {
     setResizing(false)
-  }, [])
+    setResizeSize(null)
+    forcePushHistory()
+  }, [forcePushHistory])
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
-      onSelect(widget.id, e.shiftKey)
-      listeners?.onPointerDown?.(e as any)
+      if (editMode) {
+        onSelect(widget.id, e.shiftKey)
+        listeners?.onPointerDown?.(e)
+      }
     },
-    [widget.id, onSelect, listeners]
+    [widget.id, onSelect, listeners, editMode]
   )
 
   const Component = widgetComponents[widget.type]
   const isActive = isDragging || resizing
 
-  const cardClassName = [
-    'wb-widget-card',
-    isActive ? 'wb-widget-card--active' : '',
-    isSelected && !isActive ? 'wb-widget-card--selected' : '',
-  ].filter(Boolean).join(' ')
+  const cardClassName = useMemo(
+    () =>
+      [
+        'wb-widget-card',
+        isActive ? 'wb-widget-card--active' : '',
+        isSelected && !isActive && editMode ? 'wb-widget-card--selected' : '',
+      ]
+        .filter(Boolean)
+        .join(' '),
+    [isActive, isSelected, editMode]
+  )
 
   return (
     <div
@@ -192,12 +253,12 @@ export function Widget({ widget, scale, isSelected, onSelect, onContextMenu, onO
         width: widget.width,
         height: widget.height,
         userSelect: 'none',
-        zIndex: isActive ? 50 : isSelected ? 40 : 10,
+        zIndex: isActive ? 50 : isSelected && editMode ? 40 : 10,
         animation: 'widget-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
       }}
-      onContextMenu={(e) => onContextMenu(e, widget.id)}
+      onContextMenu={(e) => editMode && onContextMenu(e, widget.id)}
       onPointerDown={handlePointerDown}
-      {...attributes}
+      {...(editMode ? attributes : {})}
     >
       <div
         className={cardClassName}
@@ -207,49 +268,87 @@ export function Widget({ widget, scale, isSelected, onSelect, onContextMenu, onO
           overflow: 'hidden',
         }}
       >
-        <div style={{ position: 'relative', zIndex: 2, width: '100%', height: '100%', pointerEvents: 'none' }}>
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 2,
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
+          }}
+        >
           <div style={{ pointerEvents: 'auto' }}>
             <WidgetErrorBoundary widgetId={widget.id}>
               <Suspense fallback={<WidgetSkeleton width={widget.width} height={widget.height} />}>
-                {widget.type === 'board' ? (
-                  <BoardWidget widget={widget} onOpenBoard={onOpenBoard ?? (() => {})} />
-                ) : Component ? (
-                  <Component widget={widget} />
-                ) : null}
+                <WidgetContext.Provider
+                  value={useMemo(
+                    () => ({ widgetId: widget.id, boardId: boardId ?? 'root' }),
+                    [widget.id, boardId]
+                  )}
+                >
+                  {Component && <Component widget={widget} onOpenBoard={onOpenBoard} />}
+                </WidgetContext.Provider>
               </Suspense>
             </WidgetErrorBoundary>
           </div>
         </div>
       </div>
 
-      {resizeHandles.map((handle) => {
-        const handleSize = isMobile ? 44 : Math.round(16 / scale)
-        return (
-          <div
-            key={handle.dir}
-            className="wb-resize-handle"
-            style={{
-              ...handle.style,
-              width: handleSize,
-              height: handleSize,
-              cursor: handle.cursor,
-            }}
-            onPointerDown={(e) => handleResizeStart(e, handle.dir)}
-            onPointerMove={handleResizeMove}
-            onPointerUp={handleResizeEnd}
-          >
-            {handle.dir === 'left' || handle.dir === 'right' ? (
-              <svg width={Math.round(4 / scale)} height={Math.round(16 / scale)} viewBox="0 0 4 16" fill="none">
-                <rect width="4" height="16" rx="2" fill="var(--wb-accent)" opacity="0.5" />
-              </svg>
-            ) : (
-              <svg width={Math.round(6 / scale)} height={Math.round(6 / scale)} viewBox="0 0 6 6" fill="none">
-                <circle cx="3" cy="3" r="3" fill="var(--wb-accent)" opacity="0.5" />
-              </svg>
-            )}
-          </div>
-        )
-      })}
+      {editMode &&
+        resizeHandles.map((handle) => {
+          const handleSize = isMobile ? 48 : 12
+          const isCorner = handle.dir.includes('-')
+          return (
+            <div
+              key={handle.dir}
+              role="separator"
+              aria-label={`Resize ${handle.dir}`}
+              tabIndex={0}
+              className="wb-resize-handle"
+              style={{
+                ...handle.style,
+                width: isCorner ? handleSize + 2 : handleSize - 4,
+                height: isCorner ? handleSize + 2 : 24,
+                cursor: handle.cursor,
+              }}
+              onPointerDown={(e) => handleResizeStart(e, handle.dir)}
+              onPointerMove={handleResizeMove}
+              onPointerUp={handleResizeEnd}
+            >
+              {isCorner ? (
+                <svg width={8} height={8} viewBox="0 0 8 8" fill="none">
+                  <rect width="8" height="3" rx="1.5" fill="var(--wb-accent)" opacity="0.8" />
+                </svg>
+              ) : (
+                <svg width={4} height={22} viewBox="0 0 4 22" fill="none">
+                  <rect width="4" height="22" rx="2" fill="var(--wb-accent)" opacity="0.8" />
+                </svg>
+              )}
+            </div>
+          )
+        })}
+
+      {editMode && resizeSize && (
+        <Paper
+          px={6}
+          py={2}
+          radius="sm"
+          style={{
+            position: 'absolute',
+            top: -26,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'var(--wb-surface-solid)',
+            border: '1px solid var(--wb-border-solid)',
+            boxShadow: 'var(--wb-shadow)',
+            zIndex: 100,
+          }}
+        >
+          <Text size="xs" c="dimmed" fw={500} style={{ fontVariantNumeric: 'tabular-nums' }}>
+            {resizeSize.w} x {resizeSize.h}
+          </Text>
+        </Paper>
+      )}
     </div>
   )
-}
+})

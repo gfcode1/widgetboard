@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, memo } from 'react'
 import { useStore } from '../../store/useStore'
 import type { ArrowElement } from '../../types'
 
@@ -9,59 +9,73 @@ interface ArrowRendererProps {
   onSelect: (id: string) => void
 }
 
-export function ArrowRenderer({ element, scale, isSelected, onSelect }: ArrowRendererProps) {
+export const ArrowRenderer = memo(function ArrowRenderer({
+  element,
+  scale,
+  isSelected,
+  onSelect,
+}: ArrowRendererProps) {
   const updateArrow = useStore((s) => s.updateArrow)
   const setSelectedElement = useStore((s) => s.setSelectedElement)
   const [draggingEnd, setDraggingEnd] = useState<'start' | 'end' | null>(null)
   const dragRef = useRef({ startX: 0, startY: 0, origX: 0, origY: 0 })
 
-  const handleStartPointerDown = useCallback((e: React.PointerEvent) => {
-    e.stopPropagation()
-    onSelect(element.id)
-    setSelectedElement(element.id)
-    setDraggingEnd('start')
-    dragRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      origX: element.startX,
-      origY: element.startY,
-    }
-    const target = e.currentTarget as HTMLElement
-    target.setPointerCapture(e.pointerId)
-  }, [element.id, element.startX, element.startY, onSelect, setSelectedElement])
+  const handleStartPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.stopPropagation()
+      onSelect(element.id)
+      setSelectedElement(element.id)
+      setDraggingEnd('start')
+      dragRef.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        origX: element.startX,
+        origY: element.startY,
+      }
+      const target = e.currentTarget as HTMLElement
+      target.setPointerCapture(e.pointerId)
+    },
+    [element.id, element.startX, element.startY, onSelect, setSelectedElement]
+  )
 
-  const handleEndPointerDown = useCallback((e: React.PointerEvent) => {
-    e.stopPropagation()
-    onSelect(element.id)
-    setSelectedElement(element.id)
-    setDraggingEnd('end')
-    dragRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      origX: element.endX,
-      origY: element.endY,
-    }
-    const target = e.currentTarget as HTMLElement
-    target.setPointerCapture(e.pointerId)
-  }, [element.id, element.endX, element.endY, onSelect, setSelectedElement])
+  const handleEndPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.stopPropagation()
+      onSelect(element.id)
+      setSelectedElement(element.id)
+      setDraggingEnd('end')
+      dragRef.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        origX: element.endX,
+        origY: element.endY,
+      }
+      const target = e.currentTarget as HTMLElement
+      target.setPointerCapture(e.pointerId)
+    },
+    [element.id, element.endX, element.endY, onSelect, setSelectedElement]
+  )
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!draggingEnd) return
-    const dx = (e.clientX - dragRef.current.startX) / scale
-    const dy = (e.clientY - dragRef.current.startY) / scale
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!draggingEnd) return
+      const dx = (e.clientX - dragRef.current.startX) / scale
+      const dy = (e.clientY - dragRef.current.startY) / scale
 
-    if (draggingEnd === 'start') {
-      updateArrow(element.id, {
-        startX: dragRef.current.origX + dx,
-        startY: dragRef.current.origY + dy,
-      })
-    } else {
-      updateArrow(element.id, {
-        endX: dragRef.current.origX + dx,
-        endY: dragRef.current.origY + dy,
-      })
-    }
-  }, [draggingEnd, scale, element.id, updateArrow])
+      if (draggingEnd === 'start') {
+        updateArrow(element.id, {
+          startX: dragRef.current.origX + dx,
+          startY: dragRef.current.origY + dy,
+        })
+      } else {
+        updateArrow(element.id, {
+          endX: dragRef.current.origX + dx,
+          endY: dragRef.current.origY + dy,
+        })
+      }
+    },
+    [draggingEnd, scale, element.id, updateArrow]
+  )
 
   const handlePointerUp = useCallback(() => {
     setDraggingEnd(null)
@@ -132,4 +146,4 @@ export function ArrowRenderer({ element, scale, isSelected, onSelect }: ArrowRen
       />
     </svg>
   )
-}
+})

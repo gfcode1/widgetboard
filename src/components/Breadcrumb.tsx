@@ -40,53 +40,60 @@ export function Breadcrumb() {
   }
 
   return (
-    <Group
-      gap={4}
-      px="sm"
-      py={4}
-      className="wb-glass"
-      style={{
-        position: 'fixed',
-        top: 12,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 20,
-        borderRadius: 'var(--wb-radius)',
-      }}
-    >
-      {crumbs.map((crumb, i) => {
-        const isLast = i === crumbs.length - 1
-        return (
-          <Group key={crumb.id} gap={4}>
-            {i > 0 && (
-              <IconChevronRight size={12} style={{ color: 'var(--wb-text-dimmed)', opacity: 0.5 }} />
-            )}
-            <UnstyledButton
-              onClick={() => handleClick(i)}
-              style={{
-                borderRadius: 'var(--mantine-radius-sm)',
-                padding: '2px 6px',
-                cursor: isLast ? 'default' : 'pointer',
-                opacity: isLast ? 1 : 0.7,
-                transition: 'opacity 150ms ease, background-color 150ms ease',
-              }}
-              styles={{
-                root: {
-                  '&:hover': !isLast ? { backgroundColor: 'var(--wb-accent-subtle)', opacity: 1 } : {},
-                },
-              }}
-            >
-              <Group gap={4}>
-                {i === 0 && <IconHome size={12} style={{ color: 'var(--wb-accent)' }} />}
-                <Text size="xs" fw={isLast ? 600 : 400} c={isLast ? 'gray.2' : 'dimmed'}>
-                  {crumb.title}
-                </Text>
-              </Group>
-            </UnstyledButton>
-          </Group>
-        )
-      })}
-    </Group>
+    <nav aria-label="Board navigation">
+      <Group
+        gap={4}
+        px="sm"
+        py={4}
+        className="wb-glass"
+        style={{
+          position: 'fixed',
+          top: 12,
+          left: 12,
+          zIndex: 20,
+          borderRadius: 'var(--wb-radius-lg)',
+          boxShadow: 'var(--wb-shadow-md)',
+        }}
+      >
+        {crumbs.map((crumb, i) => {
+          const isLast = i === crumbs.length - 1
+          return (
+            <Group key={crumb.id} gap={4}>
+              {i > 0 && (
+                <IconChevronRight
+                  size={12}
+                  style={{ color: 'var(--wb-text-dimmed)', opacity: 0.5 }}
+                />
+              )}
+              <UnstyledButton
+                onClick={() => handleClick(i)}
+                style={{
+                  borderRadius: 'var(--mantine-radius-sm)',
+                  padding: '2px 6px',
+                  cursor: isLast ? 'default' : 'pointer',
+                  opacity: isLast ? 1 : 0.7,
+                  transition: 'opacity 150ms ease, background-color 150ms ease',
+                }}
+                styles={{
+                  root: {
+                    '&:hover': !isLast
+                      ? { backgroundColor: 'var(--wb-accent-subtle)', opacity: 1 }
+                      : {},
+                  },
+                }}
+              >
+                <Group gap={4}>
+                  {i === 0 && <IconHome size={12} style={{ color: 'var(--wb-accent)' }} />}
+                  <Text size="xs" fw={isLast ? 600 : 400} c={isLast ? 'gray.2' : 'dimmed'}>
+                    {crumb.title}
+                  </Text>
+                </Group>
+              </UnstyledButton>
+            </Group>
+          )
+        })}
+      </Group>
+    </nav>
   )
 }
 

@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/widgetboard/dev-sw.js?dev-sw', { scope: '/widgetboard/', type: 'classic' })

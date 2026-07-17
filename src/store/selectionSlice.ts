@@ -11,26 +11,35 @@ function getActiveBoardId(state: WidgetStore): string {
 
 export interface SelectionSlice {
   selectedIds: string[]
+  selectedWidgetId: string | null
   setSelectedIds: (ids: string[]) => void
+  setSelectedWidgetId: (id: string | null) => void
   toggleSelectWidget: (id: string) => void
+  clearSelection: () => void
   moveSelectedWidgets: (dx: number, dy: number) => void
   removeSelectedWidgets: () => void
   duplicateSelectedWidgets: () => void
 }
 
-export const createSelectionSlice: StateCreator<WidgetStore, [], [], SelectionSlice> = (set, get) => ({
+export const createSelectionSlice: StateCreator<WidgetStore, [], [], SelectionSlice> = (
+  set,
+  get
+) => ({
   selectedIds: [],
+  selectedWidgetId: null,
 
   setSelectedIds: (ids) => set({ selectedIds: ids }),
+  setSelectedWidgetId: (id) => set({ selectedWidgetId: id }),
 
-  toggleSelectWidget: (id) => set((s) => {
-    const exists = s.selectedIds.includes(id)
-    return {
-      selectedIds: exists
-        ? s.selectedIds.filter((i) => i !== id)
-        : [...s.selectedIds, id],
-    }
-  }),
+  toggleSelectWidget: (id) =>
+    set((s) => {
+      const exists = s.selectedIds.includes(id)
+      return {
+        selectedIds: exists ? s.selectedIds.filter((i) => i !== id) : [...s.selectedIds, id],
+      }
+    }),
+
+  clearSelection: () => set({ selectedWidgetId: null, selectedIds: [] }),
 
   moveSelectedWidgets: (dx, dy) => {
     const state = get()

@@ -1,5 +1,13 @@
+import { useRef, useEffect, useState } from 'react'
 import { Paper, UnstyledButton, Group, Text } from '@mantine/core'
-import { IconCopy, IconTrash, IconLock, IconLockOpen, IconArrowUp, IconArrowDown } from '@tabler/icons-react'
+import {
+  IconCopy,
+  IconTrash,
+  IconLock,
+  IconLockOpen,
+  IconArrowUp,
+  IconArrowDown,
+} from '@tabler/icons-react'
 import { useStore, ROOT_BOARD_ID } from '../store/useStore'
 
 interface ContextMenuProps {
@@ -18,13 +26,101 @@ export function ContextMenu({ x, y, widgetId, boardId, onClose }: ContextMenuPro
   const sendToBack = useStore((s) => s.sendToBack)
   const widget = useStore((s) => s.boards[boardId ?? ROOT_BOARD_ID]?.find((w) => w.id === widgetId))
   const locked = widget?.locked ?? false
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [focusIndex, setFocusIndex] = useState(0)
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([])
+
+  const menuItems = [
+    {
+      label: 'Duplicate',
+      icon: IconCopy,
+      action: () => {
+        duplicateWidget(widgetId, boardId)
+        onClose()
+      },
+    },
+    {
+      label: locked ? 'Unlock' : 'Lock',
+      icon: locked ? IconLockOpen : IconLock,
+      action: () => {
+        toggleLockWidget(widgetId)
+        onClose()
+      },
+    },
+    {
+      label: 'Bring to Front',
+      icon: IconArrowUp,
+      action: () => {
+        bringToFront(widgetId, boardId)
+        onClose()
+      },
+    },
+    {
+      label: 'Send to Back',
+      icon: IconArrowDown,
+      action: () => {
+        sendToBack(widgetId, boardId)
+        onClose()
+      },
+    },
+    {
+      label: 'Delete',
+      icon: IconTrash,
+      action: () => {
+        removeWidget(widgetId, boardId)
+        onClose()
+      },
+      color: 'red',
+    },
+  ]
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setFocusIndex((i) => Math.min(i + 1, menuItems.length - 1))
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setFocusIndex((i) => Math.max(i - 1, 0))
+      } else if (e.key === 'Escape') {
+        onClose()
+      } else if (e.key === 'Enter') {
+        menuItems[focusIndex]?.action()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [focusIndex, menuItems, onClose])
+
+  useEffect(() => {
+    itemRefs.current[focusIndex]?.focus()
+  }, [focusIndex])
+
+  useEffect(() => {
+    if (menuRef.current) {
+      const rect = menuRef.current.getBoundingClientRect()
+      const viewportW = window.innerWidth
+      const viewportH = window.innerHeight
+      let posX = x
+      let posY = y
+      if (posX + rect.width > viewportW) posX = viewportW - rect.width - 8
+      if (posY + rect.height > viewportH) posY = viewportH - rect.height - 8
+      if (posX < 0) posX = 8
+      if (posY < 0) posY = 8
+      menuRef.current.style.left = `${posX}px`
+      menuRef.current.style.top = `${posY}px`
+    }
+  }, [x, y])
 
   return (
     <Paper
+      ref={menuRef}
       shadow="xl"
       radius="md"
       withBorder
       className="wb-context-menu"
+      role="menu"
+      aria-label="Widget actions"
       style={{
         position: 'fixed',
         left: x,
@@ -36,96 +132,36 @@ export function ContextMenu({ x, y, widgetId, boardId, onClose }: ContextMenuPro
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <UnstyledButton
-        onClick={() => { duplicateWidget(widgetId, boardId); onClose() }}
-        p="xs"
-        w="100%"
-        style={{ borderRadius: 'var(--mantine-radius-md)' }}
-        styles={{
-          root: {
-            transition: 'all 150ms ease',
-            '&:hover': { backgroundColor: 'var(--wb-accent-subtle)' },
-          },
-        }}
-      >
-        <Group gap="xs">
-          <IconCopy size={14} color="var(--wb-text-dimmed)" />
-          <Text size="sm" c="gray.3" fw={500}>Duplicate</Text>
-        </Group>
-      </UnstyledButton>
-      <UnstyledButton
-        onClick={() => { bringToFront(widgetId, boardId); onClose() }}
-        p="xs"
-        w="100%"
-        style={{ borderRadius: 'var(--mantine-radius-md)' }}
-        styles={{
-          root: {
-            transition: 'all 150ms ease',
-            '&:hover': { backgroundColor: 'var(--wb-accent-subtle)' },
-          },
-        }}
-      >
-        <Group gap="xs">
-          <IconArrowUp size={14} color="var(--wb-text-dimmed)" />
-          <Text size="sm" c="gray.3" fw={500}>Bring to Front</Text>
-        </Group>
-      </UnstyledButton>
-      <UnstyledButton
-        onClick={() => { sendToBack(widgetId, boardId); onClose() }}
-        p="xs"
-        w="100%"
-        style={{ borderRadius: 'var(--mantine-radius-md)' }}
-        styles={{
-          root: {
-            transition: 'all 150ms ease',
-            '&:hover': { backgroundColor: 'var(--wb-accent-subtle)' },
-          },
-        }}
-      >
-        <Group gap="xs">
-          <IconArrowDown size={14} color="var(--wb-text-dimmed)" />
-          <Text size="sm" c="gray.3" fw={500}>Send to Back</Text>
-        </Group>
-      </UnstyledButton>
-      <UnstyledButton
-        onClick={() => { toggleLockWidget(widgetId, boardId); onClose() }}
-        p="xs"
-        w="100%"
-        style={{ borderRadius: 'var(--mantine-radius-md)' }}
-        styles={{
-          root: {
-            transition: 'all 150ms ease',
-            '&:hover': { backgroundColor: 'var(--wb-accent-subtle)' },
-          },
-        }}
-      >
-        <Group gap="xs">
-          {locked ? (
-            <IconLockOpen size={14} color="var(--wb-text-dimmed)" />
-          ) : (
-            <IconLock size={14} color="var(--wb-text-dimmed)" />
-          )}
-          <Text size="sm" c="gray.3" fw={500}>{locked ? 'Unlock' : 'Lock'}</Text>
-        </Group>
-      </UnstyledButton>
-      <div style={{ height: 1, backgroundColor: 'var(--wb-border)', margin: '2px 4px' }} />
-      <UnstyledButton
-        onClick={() => { removeWidget(widgetId, boardId); onClose() }}
-        p="xs"
-        w="100%"
-        style={{ borderRadius: 'var(--mantine-radius-md)' }}
-        styles={{
-          root: {
-            transition: 'all 150ms ease',
-            '&:hover': { backgroundColor: 'rgba(220, 38, 38, 0.1)' },
-          },
-        }}
-      >
-        <Group gap="xs">
-          <IconTrash size={14} color="var(--mantine-color-red-4)" />
-          <Text size="sm" c="red.4" fw={500}>Delete</Text>
-        </Group>
-      </UnstyledButton>
+      {menuItems.map((item, i) => (
+        <UnstyledButton
+          key={item.label}
+          ref={(el) => {
+            itemRefs.current[i] = el
+          }}
+          role="menuitem"
+          tabIndex={-1}
+          onClick={item.action}
+          p="xs"
+          w="100%"
+          style={{ borderRadius: 'var(--mantine-radius-md)' }}
+          styles={{
+            root: {
+              transition: 'all 150ms ease',
+              '&:hover': { backgroundColor: 'var(--wb-accent-subtle)' },
+            },
+          }}
+        >
+          <Group gap="xs">
+            <item.icon
+              size={14}
+              color={item.color === 'red' ? 'var(--mantine-color-red-4)' : 'var(--wb-text-dimmed)'}
+            />
+            <Text size="sm" c={item.color === 'red' ? 'red.4' : 'gray.3'} fw={500}>
+              {item.label}
+            </Text>
+          </Group>
+        </UnstyledButton>
+      ))}
     </Paper>
   )
 }

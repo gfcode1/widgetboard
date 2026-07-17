@@ -6,10 +6,12 @@ beforeEach(() => {
     boards: { root: [] },
     currentBoardId: null,
     navigationStack: [],
-    history: [{ root: [] }],
+    history: [{ boards: { root: [] }, canvasElements: [], connections: [] }],
     historyIndex: 0,
     selectedIds: [],
     lastPushTime: 0,
+    canvasElements: [],
+    selectedElementId: null,
   })
 })
 
@@ -21,7 +23,7 @@ describe('Widget CRUD', () => {
 
     const { boards } = useStore.getState()
     expect(boards.root).toHaveLength(1)
-    expect(boards.root[0].type).toBe('note')
+    expect(boards.root![0]!.type).toBe('note')
   })
 
   it('updates widget content', () => {
@@ -29,10 +31,10 @@ describe('Widget CRUD', () => {
     const rect = new DOMRect(0, 0, 1000, 1000)
     addWidget('note', 500, 500, rect)
 
-    const widgetId = useStore.getState().boards.root[0].id
+    const widgetId = useStore.getState().boards.root![0]!.id
     updateWidget(widgetId, { content: { type: 'note', text: 'Hello' } })
 
-    const updated = useStore.getState().boards.root[0]
+    const updated = useStore.getState().boards.root![0]!
     expect(updated.content.type).toBe('note')
     if (updated.content.type === 'note') {
       expect(updated.content.text).toBe('Hello')
@@ -44,7 +46,7 @@ describe('Widget CRUD', () => {
     const rect = new DOMRect(0, 0, 1000, 1000)
     addWidget('note', 500, 500, rect)
 
-    const widgetId = useStore.getState().boards.root[0].id
+    const widgetId = useStore.getState().boards.root![0]!.id
     removeWidget(widgetId)
 
     expect(useStore.getState().boards.root).toHaveLength(0)
@@ -55,14 +57,14 @@ describe('Widget CRUD', () => {
     const rect = new DOMRect(0, 0, 1000, 1000)
     addWidget('note', 500, 500, rect)
 
-    const widgetId = useStore.getState().boards.root[0].id
-    expect(useStore.getState().boards.root[0].locked).toBe(false)
+    const widgetId = useStore.getState().boards.root![0]!.id
+    expect(useStore.getState().boards.root![0]!.locked).toBe(false)
 
     toggleLockWidget(widgetId)
-    expect(useStore.getState().boards.root[0].locked).toBe(true)
+    expect(useStore.getState().boards.root![0]!.locked).toBe(true)
 
     toggleLockWidget(widgetId)
-    expect(useStore.getState().boards.root[0].locked).toBe(false)
+    expect(useStore.getState().boards.root![0]!.locked).toBe(false)
   })
 
   it('brings widget to front', () => {
@@ -71,10 +73,10 @@ describe('Widget CRUD', () => {
     addWidget('note', 100, 100, rect)
     addWidget('clock', 200, 200, rect)
 
-    const ids = useStore.getState().boards.root.map((w) => w.id)
-    bringToFront(ids[0])
+    const ids = useStore.getState().boards.root!.map((w) => w.id)
+    bringToFront(ids[0]!)
 
-    const order = useStore.getState().boards.root.map((w) => w.id)
+    const order = useStore.getState().boards.root!.map((w) => w.id)
     expect(order[order.length - 1]).toBe(ids[0])
   })
 })
@@ -101,7 +103,7 @@ describe('History / Undo / Redo', () => {
 
     redo()
     expect(useStore.getState().boards.root).toHaveLength(1)
-    expect(useStore.getState().boards.root[0].type).toBe('note')
+    expect(useStore.getState().boards.root![0]!.type).toBe('note')
   })
 
   it('reports canUndo/canRedo correctly', () => {
@@ -116,6 +118,180 @@ describe('History / Undo / Redo', () => {
     undo()
     expect(useStore.getState().canUndo()).toBe(false)
     expect(useStore.getState().canRedo()).toBe(true)
+  })
+})
+
+describe('Canvas Elements Undo/Redo', () => {
+  it('undoes text element addition', () => {
+    const { addText, undo } = useStore.getState()
+    addText({
+      content: 'Hello',
+      x: 0,
+      y: 0,
+      fontSize: 16,
+      fontFamily: 'sans-serif',
+      color: '#000',
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      boardId: 'root',
+    })
+    expect(useStore.getState().canvasElements).toHaveLength(1)
+
+    undo()
+    expect(useStore.getState().canvasElements).toHaveLength(0)
+  })
+
+  it('undoes arrow element addition', () => {
+    const { addArrow, undo } = useStore.getState()
+    addArrow({
+      startX: 0,
+      startY: 0,
+      endX: 100,
+      endY: 100,
+      color: '#000',
+      strokeWidth: 2,
+      style: 'solid',
+      boardId: 'root',
+    })
+    expect(useStore.getState().canvasElements).toHaveLength(1)
+
+    undo()
+    expect(useStore.getState().canvasElements).toHaveLength(0)
+  })
+
+  it('undoes shape element addition', () => {
+    const { addShape, undo } = useStore.getState()
+    addShape({
+      shape: 'rectangle',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      fill: 'transparent',
+      stroke: '#000',
+      strokeWidth: 2,
+      opacity: 1,
+      boardId: 'root',
+    })
+    expect(useStore.getState().canvasElements).toHaveLength(1)
+
+    undo()
+    expect(useStore.getState().canvasElements).toHaveLength(0)
+  })
+
+  it('undoes group element addition', () => {
+    const { addGroup, undo } = useStore.getState()
+    addGroup({
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 200,
+      title: 'Test',
+      color: '#00000010',
+      collapsed: false,
+      widgetIds: [],
+      boardId: 'root',
+    })
+    expect(useStore.getState().canvasElements).toHaveLength(1)
+
+    undo()
+    expect(useStore.getState().canvasElements).toHaveLength(0)
+  })
+
+  it('redoes canvas element after undo', () => {
+    const { addText, undo, redo } = useStore.getState()
+    addText({
+      content: 'Hello',
+      x: 0,
+      y: 0,
+      fontSize: 16,
+      fontFamily: 'sans-serif',
+      color: '#000',
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      boardId: 'root',
+    })
+    expect(useStore.getState().canvasElements).toHaveLength(1)
+
+    undo()
+    expect(useStore.getState().canvasElements).toHaveLength(0)
+
+    redo()
+    expect(useStore.getState().canvasElements).toHaveLength(1)
+  })
+
+  it('undoes text element update', () => {
+    const { addText, updateText, undo } = useStore.getState()
+    const id = addText({
+      content: 'Hello',
+      x: 0,
+      y: 0,
+      fontSize: 16,
+      fontFamily: 'sans-serif',
+      color: '#000',
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      boardId: 'root',
+    })
+    expect(useStore.getState().canvasElements).toHaveLength(1)
+
+    updateText(id, { content: 'Updated' })
+    const updated = useStore.getState().canvasElements.find((e) => e.id === id) as any
+    expect(updated?.content).toBe('Updated')
+
+    undo()
+    const afterUndo = useStore.getState().canvasElements.find((e) => e.id === id) as any
+    expect(afterUndo?.content).toBe('Hello')
+  })
+
+  it('undoes text element removal', () => {
+    const { addText, removeText, undo } = useStore.getState()
+    addText({
+      content: 'Hello',
+      x: 0,
+      y: 0,
+      fontSize: 16,
+      fontFamily: 'sans-serif',
+      color: '#000',
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      boardId: 'root',
+    })
+    const id = useStore.getState().canvasElements[0]!.id
+    removeText(id)
+    expect(useStore.getState().canvasElements).toHaveLength(0)
+
+    undo()
+    expect(useStore.getState().canvasElements).toHaveLength(1)
+  })
+
+  it('handles mixed widget and element undo', () => {
+    const { addWidget, addText, undo } = useStore.getState()
+    const rect = new DOMRect(0, 0, 1000, 1000)
+    addWidget('note', 500, 500, rect)
+    addText({
+      content: 'Hello',
+      x: 0,
+      y: 0,
+      fontSize: 16,
+      fontFamily: 'sans-serif',
+      color: '#000',
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      boardId: 'root',
+    })
+
+    expect(useStore.getState().boards.root).toHaveLength(1)
+    expect(useStore.getState().canvasElements).toHaveLength(1)
+
+    undo()
+    // Last action was adding text
+    expect(useStore.getState().canvasElements).toHaveLength(0)
+    expect(useStore.getState().boards.root).toHaveLength(1)
+
+    undo()
+    // Before that was adding widget
+    expect(useStore.getState().boards.root).toHaveLength(0)
   })
 })
 
@@ -187,9 +363,9 @@ describe('Selection', () => {
     addWidget('note', 100, 100, rect)
     addWidget('clock', 200, 200, rect)
 
-    const ids = useStore.getState().boards.root.map((w) => w.id)
-    toggleSelectWidget(ids[0])
-    toggleSelectWidget(ids[1])
+    const ids = useStore.getState().boards.root!.map((w) => w.id)
+    toggleSelectWidget(ids[0]!)
+    toggleSelectWidget(ids[1]!)
 
     removeSelectedWidgets()
     expect(useStore.getState().boards.root).toHaveLength(0)
@@ -207,8 +383,8 @@ describe('Nested Boards with Widgets', () => {
     addWidget('clock', 200, 200, rect, boardId)
 
     expect(useStore.getState().boards[boardId]).toHaveLength(2)
-    expect(useStore.getState().boards[boardId][0].type).toBe('note')
-    expect(useStore.getState().boards[boardId][1].type).toBe('clock')
+    expect(useStore.getState().boards[boardId]![0]!.type).toBe('note')
+    expect(useStore.getState().boards[boardId]![1]!.type).toBe('clock')
   })
 
   it('keeps nested board widgets isolated from root', () => {
@@ -263,7 +439,7 @@ describe('Nested Boards with Widgets', () => {
 
     // Add a board widget to root that references the sub-board
     addWidget('board', 100, 100, rect)
-    const boardWidget = useStore.getState().boards.root.find((w) => w.type === 'board')
+    const boardWidget = useStore.getState().boards.root!.find((w) => w.type === 'board')
     expect(boardWidget).toBeDefined()
 
     // Add widgets to the sub-board
@@ -308,7 +484,7 @@ describe('Nested Boards with Widgets', () => {
     const rect = new DOMRect(0, 0, 1000, 1000)
 
     addWidget('board', 100, 100, rect)
-    const boardWidget = useStore.getState().boards.root.find((w) => w.type === 'board')
+    const boardWidget = useStore.getState().boards.root!.find((w) => w.type === 'board')
     if (boardWidget && boardWidget.content.type === 'board') {
       // Update the boardId to match our created sub-board
       useStore.getState().updateWidget(boardWidget.id, {
@@ -318,7 +494,7 @@ describe('Nested Boards with Widgets', () => {
 
     renameBoard(boardId, 'New Title')
 
-    const updated = useStore.getState().boards.root.find((w) => w.type === 'board')
+    const updated = useStore.getState().boards.root!.find((w) => w.type === 'board')
     if (updated && updated.content.type === 'board') {
       expect(updated.content.title).toBe('New Title')
     }
@@ -340,5 +516,44 @@ describe('Export / Import', () => {
     importLayout(json)
 
     expect(useStore.getState().boards.root).toHaveLength(1)
+  })
+
+  it('exports and imports canvas elements', () => {
+    const { addText, addShape, exportLayout, importLayout } = useStore.getState()
+    addText({
+      content: 'Hello World',
+      x: 10,
+      y: 20,
+      fontSize: 16,
+      fontFamily: 'sans-serif',
+      color: '#000',
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      boardId: 'root',
+    })
+    addShape({
+      shape: 'rectangle',
+      x: 50,
+      y: 60,
+      width: 100,
+      height: 80,
+      fill: '#fff',
+      stroke: '#000',
+      strokeWidth: 2,
+      opacity: 1,
+      boardId: 'root',
+    })
+
+    const json = exportLayout()
+    const parsed = JSON.parse(json)
+    expect(parsed.canvasElements).toHaveLength(2)
+
+    // Clear and import
+    useStore.setState({ canvasElements: [] })
+    importLayout(json)
+
+    expect(useStore.getState().canvasElements).toHaveLength(2)
+    expect((useStore.getState().canvasElements[0] as any).content).toBe('Hello World')
+    expect((useStore.getState().canvasElements[1] as any).shape).toBe('rectangle')
   })
 })

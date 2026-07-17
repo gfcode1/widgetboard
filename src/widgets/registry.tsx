@@ -1,16 +1,37 @@
 import type { ReactNode } from 'react'
 import type { WidgetType, WidgetContent } from '../types'
-import { IconNote, IconClock, IconLink, IconPhoto, IconCloud, IconStopwatch, IconCalculator, IconSticker, IconWorld, IconLayoutDashboard, IconCheckbox, IconCalendar, IconSearch, IconFolder, IconBookmark, IconMessageCircle, IconClipboard, IconCode, IconPalette, IconWallet, IconRss, IconClock2, IconChartBar, IconTarget } from '@tabler/icons-react'
+import {
+  IconNote,
+  IconClock,
+  IconLink,
+  IconPhoto,
+  IconCloud,
+  IconStopwatch,
+  IconCalculator,
+  IconSticker,
+  IconWorld,
+  IconLayoutDashboard,
+  IconCheckbox,
+  IconCalendar,
+  IconSearch,
+  IconFolder,
+  IconBookmark,
+  IconMessageCircle,
+  IconClipboard,
+  IconCode,
+  IconPalette,
+  IconWallet,
+  IconRss,
+  IconClock2,
+  IconChartBar,
+  IconTarget,
+  IconHourglass,
+  IconLayoutColumns,
+} from '@tabler/icons-react'
 import { v4 as uuidv4 } from 'uuid'
 
 export type WidgetCategory =
-  | 'productivity'
-  | 'time'
-  | 'media'
-  | 'utilities'
-  | 'organization'
-  | 'finance'
-  | 'data'
+  'productivity' | 'time' | 'media' | 'utilities' | 'organization' | 'finance' | 'data'
 
 export const CATEGORY_LABELS: Record<WidgetCategory, string> = {
   productivity: 'Productivity',
@@ -114,7 +135,7 @@ export const WIDGET_REGISTRY: WidgetMeta[] = [
     category: 'organization',
     defaultWidth: 300,
     defaultHeight: 80,
-    defaultContent: () => ({ type: 'link', url: '', title: '' }),
+    defaultContent: () => ({ type: 'link', links: [], activeIndex: 0 }),
   },
   {
     type: 'image',
@@ -284,7 +305,7 @@ export const WIDGET_REGISTRY: WidgetMeta[] = [
     category: 'time',
     defaultWidth: 260,
     defaultHeight: 160,
-    defaultContent: () => ({ type: 'countdown', target: 0, label: '', showSeconds: true }),
+    defaultContent: () => ({ type: 'countdown', countdowns: [], showSeconds: true }),
   },
   {
     type: 'pomodoro-stats',
@@ -305,6 +326,39 @@ export const WIDGET_REGISTRY: WidgetMeta[] = [
     defaultWidth: 320,
     defaultHeight: 350,
     defaultContent: () => ({ type: 'habit', habits: [] }),
+  },
+  {
+    type: 'timer',
+    label: 'Timer',
+    icon: <IconHourglass size={20} />,
+    description: 'Cronometro e countdown regolabile',
+    category: 'time',
+    defaultWidth: 260,
+    defaultHeight: 260,
+    defaultContent: () => ({
+      type: 'timer',
+      mode: 'stopwatch',
+      elapsed: 0,
+      target: 300000,
+      running: false,
+      laps: [],
+    }),
+  },
+  {
+    type: 'kanban',
+    label: 'Kanban',
+    icon: <IconLayoutColumns size={20} />,
+    description: 'Board Kanban con drag-and-drop',
+    category: 'productivity',
+    defaultWidth: 400,
+    defaultHeight: 280,
+    defaultContent: () => ({
+      type: 'kanban',
+      columns: [
+        { id: 'col-1', title: 'To Do', cards: [] },
+        { id: 'col-2', title: 'Done', cards: [] },
+      ],
+    }),
   },
 ]
 

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, memo } from 'react'
 import { useStore } from '../../store/useStore'
 import { ROOT_BOARD_ID } from '../../store/useStore'
 import { GroupRenderer } from './GroupRenderer'
@@ -12,10 +12,13 @@ interface CanvasElementsProps {
   selectedWidgetId?: string | null
 }
 
-export function CanvasElements({ scale, boardId = ROOT_BOARD_ID }: CanvasElementsProps) {
+export const CanvasElements = memo(function CanvasElements({
+  scale,
+  boardId = ROOT_BOARD_ID,
+}: CanvasElementsProps) {
   const allElements = useStore((s) => s.canvasElements)
   const elements = useMemo(
-    () => allElements.filter(e => e.boardId === boardId),
+    () => allElements.filter((e) => e.boardId === boardId),
     [allElements, boardId]
   )
   const selectedElementId = useStore((s) => s.selectedElementId)
@@ -25,7 +28,10 @@ export function CanvasElements({ scale, boardId = ROOT_BOARD_ID }: CanvasElement
     setSelectedElement(id)
   }
 
-  const sortedElements = useMemo(() => [...elements].sort((a, b) => a.zIndex - b.zIndex), [elements])
+  const sortedElements = useMemo(
+    () => [...elements].sort((a, b) => a.zIndex - b.zIndex),
+    [elements]
+  )
 
   return (
     <>
@@ -78,4 +84,4 @@ export function CanvasElements({ scale, boardId = ROOT_BOARD_ID }: CanvasElement
       })}
     </>
   )
-}
+})

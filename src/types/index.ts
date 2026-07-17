@@ -1,11 +1,30 @@
 export type WidgetType =
-  | 'note' | 'clock' | 'link' | 'image'
-  | 'weather' | 'pomodoro' | 'calc' | 'sticky'
-  | 'embed' | 'worldclock' | 'todo' | 'calendar' | 'search'
+  | 'note'
+  | 'clock'
+  | 'link'
+  | 'image'
+  | 'weather'
+  | 'pomodoro'
+  | 'calc'
+  | 'sticky'
+  | 'embed'
+  | 'worldclock'
+  | 'todo'
+  | 'calendar'
+  | 'search'
   | 'board'
-  | 'bookmark' | 'quote' | 'clipboard' | 'snippet'
-  | 'palette' | 'expense' | 'rss' | 'countdown'
-  | 'pomodoro-stats' | 'habit'
+  | 'bookmark'
+  | 'quote'
+  | 'clipboard'
+  | 'snippet'
+  | 'palette'
+  | 'expense'
+  | 'rss'
+  | 'countdown'
+  | 'pomodoro-stats'
+  | 'habit'
+  | 'timer'
+  | 'kanban'
 
 export type CanvasElementType = 'group' | 'text' | 'arrow' | 'shape'
 
@@ -87,10 +106,19 @@ export interface ClockContent {
   use12h: boolean
 }
 
-export interface LinkContent {
-  type: 'link'
+export interface LinkItem {
+  id: string
   url: string
   title: string
+  favicon?: string
+  description?: string
+  health?: 'ok' | 'error' | 'checking'
+}
+
+export interface LinkContent {
+  type: 'link'
+  links: LinkItem[]
+  activeIndex: number
 }
 
 export interface ImageContent {
@@ -136,6 +164,7 @@ export interface StickyContent {
   type: 'sticky'
   text: string
   color: string
+  tags?: string[]
 }
 
 export interface EmbedContent {
@@ -178,6 +207,7 @@ export interface BoardContent {
   type: 'board'
   boardId: string
   title: string
+  color?: string
 }
 
 export interface BookmarkContent {
@@ -212,8 +242,16 @@ export interface PaletteContent {
 
 export interface ExpenseContent {
   type: 'expense'
-  items: Array<{ id: string; amount: number; category: string; note: string; date: string }>
+  items: Array<{
+    id: string
+    amount: number
+    category: string
+    note: string
+    date: string
+    isRecurring?: boolean
+  }>
   currency: string
+  monthlyBudget?: number
 }
 
 export interface RssContent {
@@ -222,10 +260,16 @@ export interface RssContent {
   items: Array<{ title: string; link: string; pubDate: string; feedUrl: string }>
 }
 
+export interface CountdownItem {
+  id: string
+  label: string
+  target: number
+  color: string
+}
+
 export interface CountdownContent {
   type: 'countdown'
-  target: number
-  label: string
+  countdowns: CountdownItem[]
   showSeconds: boolean
 }
 
@@ -236,7 +280,32 @@ export interface PomodoroStatsContent {
 
 export interface HabitContent {
   type: 'habit'
-  habits: Array<{ id: string; name: string; icon: string; color: string; completedDates: string[]; frequency: 'daily' | 'weekly' }>
+  habits: Array<{
+    id: string
+    name: string
+    icon: string
+    color: string
+    completedDates: string[]
+    frequency: 'daily' | 'weekly'
+  }>
+}
+
+export interface TimerContent {
+  type: 'timer'
+  mode: 'stopwatch' | 'countdown'
+  elapsed: number
+  target: number
+  running: boolean
+  laps: number[]
+}
+
+export interface KanbanContent {
+  type: 'kanban'
+  columns: Array<{
+    id: string
+    title: string
+    cards: Array<{ id: string; text: string }>
+  }>
 }
 
 export type WidgetContent =
@@ -264,6 +333,8 @@ export type WidgetContent =
   | CountdownContent
   | PomodoroStatsContent
   | HabitContent
+  | TimerContent
+  | KanbanContent
 
 export interface Widget {
   id: string

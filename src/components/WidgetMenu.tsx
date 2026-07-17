@@ -1,6 +1,6 @@
 import { useCallback, useState, useMemo } from 'react'
-import { Paper, UnstyledButton, Group, Text, Stack, TextInput } from '@mantine/core'
-import { IconSearch } from '@tabler/icons-react'
+import { Paper, UnstyledButton, Group, Text, TextInput, Chip, ActionIcon } from '@mantine/core'
+import { IconSearch, IconStar, IconStarFilled, IconClock } from '@tabler/icons-react'
 import type { WidgetType } from '../types'
 import {
   WIDGET_REGISTRY,
@@ -9,52 +9,117 @@ import {
   type WidgetCategory,
 } from '../widgets/registry'
 
+const RECENT_KEY = 'widgetboard-recent'
+const FAVORITES_KEY = 'widgetboard-favorites'
+
+function loadFromStorage(key: string): string[] {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+function saveToStorage(key: string, items: string[]) {
+  localStorage.setItem(key, JSON.stringify(items))
+}
+
 interface WidgetMenuProps {
   onSelect: (type: WidgetType) => void
   onClose: () => void
 }
 
+function fuzzyMatch(text: string, query: string): boolean {
+  if (!query) return true
+  const q = query.toLowerCase()
+  const t = text.toLowerCase()
+  let qi = 0
+  for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+    if (t[ti] === q[qi]) qi++
+  }
+  return qi === q.length
+}
+
+function highlightMatch(text: string, query: string): { text: string; highlighted: boolean }[] {
+  if (!query) return [{ text, highlighted: false }]
+  const q = query.toLowerCase()
+  const parts: { text: string; highlighted: boolean }[] = []
+  let qi = 0
+  let current = ''
+  for (const ch of text) {
+    if (qi < q.length && ch.toLowerCase() === q[qi]) {
+      if (current) {
+        parts.push({ text: current, highlighted: false })
+        current = ''
+      }
+      parts.push({ text: ch, highlighted: true })
+      qi++
+    } else {
+      current += ch
+    }
+  }
+  if (current) parts.push({ text: current, highlighted: false })
+  return parts
+}
+
 export function WidgetMenu({ onSelect, onClose }: WidgetMenuProps) {
   const [filter, setFilter] = useState('')
+  const [recent, setRecent] = useState<string[]>(() => loadFromStorage(RECENT_KEY))
+  const [favorites, setFavorites] = useState<string[]>(() => loadFromStorage(FAVORITES_KEY))
+  const [selectedCat, setSelectedCat] = useState<WidgetCategory | 'all'>('all')
 
-  const grouped = useMemo(() => {
-    const items = filter.trim()
-      ? WIDGET_REGISTRY.filter((item) => {
-          const q = filter.toLowerCase()
-          return (
-            item.label.toLowerCase().includes(q) ||
-            item.description.toLowerCase().includes(q)
-          )
-        })
-      : WIDGET_REGISTRY
+  const toggleFavorite = useCallback((type: string) => {
+    setFavorites((prev) => {
+      const next = prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+      saveToStorage(FAVORITES_KEY, next)
+      return next
+    })
+  }, [])
 
-    const map = new Map<WidgetCategory, typeof items>()
-    for (const item of items) {
-      const list = map.get(item.category) ?? []
-      list.push(item)
-      map.set(item.category, list)
+  const recentWidgets = useMemo(() => {
+    if (!filter.trim()) {
+      return recent
+        .map((t) => WIDGET_REGISTRY.find((w) => w.type === t))
+        .filter(Boolean) as typeof WIDGET_REGISTRY
     }
-    return map
-  }, [filter])
+    return []
+  }, [recent, filter])
+
+  const favoriteWidgets = useMemo(() => {
+    return favorites
+      .map((t) => WIDGET_REGISTRY.find((w) => w.type === t))
+      .filter(Boolean) as typeof WIDGET_REGISTRY
+  }, [favorites])
+
+  const filtered = useMemo(() => {
+    const q = filter.trim()
+    if (!q) {
+      if (selectedCat === 'all') return WIDGET_REGISTRY
+      return WIDGET_REGISTRY.filter((w) => w.category === selectedCat)
+    }
+    return WIDGET_REGISTRY.filter(
+      (w) => fuzzyMatch(w.label, q) || fuzzyMatch(w.description, q) || fuzzyMatch(w.type, q)
+    )
+  }, [filter, selectedCat])
 
   const handleSelect = useCallback(
     (type: WidgetType) => {
+      const updated = [type, ...recent.filter((t) => t !== type)].slice(0, 5)
+      setRecent(updated)
+      saveToStorage(RECENT_KEY, updated)
       onSelect(type)
       onClose()
     },
-    [onSelect, onClose]
+    [recent, onSelect, onClose]
   )
 
-  const visibleCategories = CATEGORY_ORDER.filter(
-    (cat) => grouped.has(cat) && grouped.get(cat)!.length > 0
-  )
+  const showPinned = favoriteWidgets.length > 0 && !filter.trim() && selectedCat === 'all'
+  const showRecent = recentWidgets.length > 0 && !filter.trim() && selectedCat === 'all'
 
   return (
     <>
-      <div
-        style={{ position: 'fixed', inset: 0, zIndex: 40 }}
-        onClick={onClose}
-      />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={onClose} />
       <Paper
         shadow="xl"
         radius="md"
@@ -65,26 +130,16 @@ export function WidgetMenu({ onSelect, onClose }: WidgetMenuProps) {
           left: '50%',
           transform: 'translateX(-50%)',
           marginBottom: 8,
-          width: 320,
+          width: 380,
           zIndex: 50,
           backgroundColor: 'var(--wb-surface)',
           borderColor: 'var(--wb-border)',
           overflow: 'hidden',
           boxShadow: 'var(--wb-shadow-lg)',
+          animation: 'scale-in 150ms cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        <Text
-          size="xs"
-          tt="uppercase"
-          fw={600}
-          c="dimmed"
-          px="sm"
-          py={8}
-          style={{ borderBottom: '1px solid var(--wb-border)' }}
-        >
-          Add Widget
-        </Text>
-        <div style={{ padding: '6px 6px 2px' }}>
+        <div style={{ padding: '8px 8px 4px' }}>
           <TextInput
             placeholder="Search widgets..."
             size="xs"
@@ -105,80 +160,212 @@ export function WidgetMenu({ onSelect, onClose }: WidgetMenuProps) {
             }}
           />
         </div>
+
+        {!filter.trim() && (
+          <div style={{ padding: '0 8px 6px' }}>
+            <Chip.Group
+              value={selectedCat}
+              onChange={(v) => setSelectedCat((v || 'all') as WidgetCategory | 'all')}
+            >
+              <Group gap={4}>
+                <Chip value="all" size="xs" radius="sm">
+                  All
+                </Chip>
+                {CATEGORY_ORDER.map((cat) => (
+                  <Chip key={cat} value={cat} size="xs" radius="sm">
+                    {CATEGORY_LABELS[cat]}
+                  </Chip>
+                ))}
+              </Group>
+            </Chip.Group>
+          </div>
+        )}
+
         <div
           style={{
-            maxHeight: 420,
+            maxHeight: 400,
             overflowY: 'auto',
-            padding: '4px 4px 6px',
+            padding: '4px 8px 8px',
           }}
         >
-          {visibleCategories.length === 0 ? (
+          {showPinned && (
+            <>
+              <Group gap={4} mb={4} px={4}>
+                <IconStarFilled size={10} color="var(--mantine-color-yellow-5)" />
+                <Text size="xs" c="dimmed" fw={600}>
+                  Pinned
+                </Text>
+              </Group>
+              <div
+                style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 8 }}
+              >
+                {favoriteWidgets.map((w) => (
+                  <WidgetCard
+                    key={w.type}
+                    item={w}
+                    isFavorite={true}
+                    onToggleFavorite={() => toggleFavorite(w.type)}
+                    onSelect={() => handleSelect(w.type)}
+                    query=""
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          {showRecent && (
+            <>
+              <Group gap={4} mb={4} px={4}>
+                <IconClock size={10} color="var(--wb-text-dimmed)" />
+                <Text size="xs" c="dimmed" fw={600}>
+                  Recent
+                </Text>
+              </Group>
+              <div
+                style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 8 }}
+              >
+                {recentWidgets.map((w) => (
+                  <WidgetCard
+                    key={w.type}
+                    item={w}
+                    isFavorite={favorites.includes(w.type)}
+                    onToggleFavorite={() => toggleFavorite(w.type)}
+                    onSelect={() => handleSelect(w.type)}
+                    query=""
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          {filtered.length === 0 ? (
             <Text size="xs" c="dimmed" ta="center" py="md">
               No widgets found
             </Text>
           ) : (
-            <Stack gap={0}>
-              {visibleCategories.map((cat, catIdx) => {
-                const widgets = grouped.get(cat)!
-                return (
-                  <div key={cat}>
-                    {catIdx > 0 && (
-                      <div
-                        style={{
-                          height: 1,
-                          backgroundColor: 'var(--wb-border)',
-                          margin: '4px 8px',
-                        }}
-                      />
-                    )}
-                    <Text
-                      size="xs"
-                      tt="uppercase"
-                      fw={600}
-                      c="dimmed"
-                      px="sm"
-                      pt={catIdx === 0 ? 4 : 8}
-                      pb={4}
-                    >
-                      {CATEGORY_LABELS[cat]}
-                    </Text>
-                    {widgets.map((item) => (
-                      <UnstyledButton
-                        key={item.type}
-                        onClick={() => handleSelect(item.type)}
-                        p="sm"
-                        style={{ borderRadius: 'var(--mantine-radius-md)', width: '100%' }}
-                        styles={{
-                          root: {
-                            transition: 'background-color 150ms ease',
-                            '&:hover': {
-                              backgroundColor: 'var(--wb-accent-subtle)',
-                            },
-                          },
-                        }}
-                      >
-                        <Group gap="sm">
-                          <div style={{ color: 'var(--wb-text-dimmed)' }}>
-                            {item.icon}
-                          </div>
-                          <div>
-                            <Text size="sm" c="gray.2" fw={500}>
-                              {item.label}
-                            </Text>
-                            <Text size="xs" c="dimmed">
-                              {item.description}
-                            </Text>
-                          </div>
-                        </Group>
-                      </UnstyledButton>
-                    ))}
-                  </div>
-                )
-              })}
-            </Stack>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+              {filtered.map((w, i) => (
+                <WidgetCard
+                  key={w.type}
+                  item={w}
+                  isFavorite={favorites.includes(w.type)}
+                  onToggleFavorite={() => toggleFavorite(w.type)}
+                  onSelect={() => handleSelect(w.type)}
+                  query={filter.trim()}
+                  style={{ animationDelay: `${i * 30}ms` }}
+                />
+              ))}
+            </div>
           )}
         </div>
       </Paper>
     </>
+  )
+}
+
+function WidgetCard({
+  item,
+  isFavorite,
+  onToggleFavorite,
+  onSelect,
+  query,
+  style,
+}: {
+  item: (typeof WIDGET_REGISTRY)[number]
+  isFavorite: boolean
+  onToggleFavorite: () => void
+  onSelect: () => void
+  query: string
+  style?: React.CSSProperties
+}) {
+  const labelParts = highlightMatch(item.label, query)
+  const descParts = highlightMatch(item.description, query)
+  const FavoriteIcon = isFavorite ? IconStarFilled : IconStar
+
+  return (
+    <UnstyledButton
+      onClick={onSelect}
+      style={{
+        borderRadius: 'var(--wb-radius-sm)',
+        padding: '8px 10px',
+        transition: 'background-color 150ms ease, transform 120ms ease',
+        animation: 'fade-in 200ms ease both',
+        ...style,
+      }}
+      styles={{
+        root: {
+          '&:hover': {
+            backgroundColor: 'var(--wb-accent-subtle)',
+            transform: 'translateY(-1px)',
+          },
+        },
+      }}
+    >
+      <Group gap="xs" align="flex-start" wrap="nowrap">
+        <div style={{ color: 'var(--wb-accent)', marginTop: 1, flexShrink: 0 }}>{item.icon}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Text size="xs" fw={500} c="gray.2">
+            {labelParts.map((p, i) =>
+              p.highlighted ? (
+                <span
+                  key={i}
+                  style={{
+                    backgroundColor: 'var(--wb-accent)',
+                    color: 'white',
+                    borderRadius: 2,
+                    padding: '0 1px',
+                  }}
+                >
+                  {p.text}
+                </span>
+              ) : (
+                <span key={i}>{p.text}</span>
+              )
+            )}
+          </Text>
+          <Text size="xs" c="dimmed" lineClamp={1}>
+            {descParts.map((p, i) =>
+              p.highlighted ? (
+                <span
+                  key={i}
+                  style={{
+                    backgroundColor: 'var(--wb-accent-hover)',
+                    color: 'var(--wb-accent)',
+                    borderRadius: 2,
+                    padding: '0 1px',
+                  }}
+                >
+                  {p.text}
+                </span>
+              ) : (
+                <span key={i}>{p.text}</span>
+              )
+            )}
+          </Text>
+        </div>
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          size="xs"
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleFavorite()
+          }}
+          aria-label={isFavorite ? 'Unpin widget' : 'Pin widget'}
+          style={{ flexShrink: 0, opacity: isFavorite ? 1 : 0.3, transition: 'opacity 150ms ease' }}
+          onMouseEnter={(e) => {
+            if (!isFavorite) e.currentTarget.style.opacity = '0.7'
+          }}
+          onMouseLeave={(e) => {
+            if (!isFavorite) e.currentTarget.style.opacity = '0.3'
+          }}
+        >
+          <FavoriteIcon
+            size={12}
+            color={isFavorite ? 'var(--mantine-color-yellow-5)' : 'var(--wb-text-dimmed)'}
+          />
+        </ActionIcon>
+      </Group>
+    </UnstyledButton>
   )
 }

@@ -3,7 +3,8 @@ import { createTheme } from '@mantine/core'
 export const theme = createTheme({
   primaryColor: 'violet',
   defaultRadius: 'md',
-  fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  fontFamily:
+    "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   colors: {
     violet: [
       '#f5f3ff',

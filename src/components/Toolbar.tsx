@@ -1,9 +1,30 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useMemo } from 'react'
 import { Group, Text, Button, ActionIcon, Tooltip } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
-import { IconPlus, IconArrowBackUp, IconArrowForwardUp, IconGridDots, IconShield, IconDownload, IconUpload, IconSun, IconMoon, IconRobot } from '@tabler/icons-react'
+import {
+  IconPlus,
+  IconArrowBackUp,
+  IconArrowForwardUp,
+  IconGridDots,
+  IconShield,
+  IconDownload,
+  IconUpload,
+  IconSun,
+  IconMoon,
+  IconCopy,
+  IconTrash,
+  IconLock,
+  IconArrowUp,
+  IconArrowDown,
+  IconX,
+  IconSettings,
+  IconSearch,
+  IconPencil,
+  IconEye,
+} from '@tabler/icons-react'
 import type { WidgetType } from '../types'
 import { useStore } from '../store/useStore'
+import { useToast } from './Toast'
 import { WidgetMenu } from './WidgetMenu'
 import { MobileWidgetSheet } from './MobileWidgetSheet'
 
@@ -11,14 +32,26 @@ interface ToolbarProps {
   onToggleScheme?: () => void
   scheme?: 'dark' | 'light'
   boardId?: string
-  agentOpened?: boolean
-  onToggleAgent?: () => void
+  onOpenSettings?: () => void
+  onOpenPalette?: () => void
 }
 
-export function Toolbar({ onToggleScheme, scheme, boardId, agentOpened, onToggleAgent }: ToolbarProps) {
+export function Toolbar({
+  onToggleScheme,
+  scheme,
+  boardId,
+  onOpenSettings,
+  onOpenPalette,
+}: ToolbarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const addWidget = useStore((s) => s.addWidget)
-  const widgetCount = useStore((s): number => Object.values(s.boards).reduce((acc, arr) => acc + arr.length, 0))
+  const boards = useStore((s) => s.boards)
+  const editMode = useStore((s) => s.editMode)
+  const toggleEditMode = useStore((s) => s.toggleEditMode)
+  const widgetCount = useMemo(
+    () => Object.values(boards).reduce((acc, arr) => acc + arr.length, 0),
+    [boards]
+  )
   const snapEnabled = useStore((s) => s.snapEnabled)
   const collisionEnabled = useStore((s) => s.collisionEnabled)
   const toggleSnap = useStore((s) => s.toggleSnap)
@@ -29,17 +62,35 @@ export function Toolbar({ onToggleScheme, scheme, boardId, agentOpened, onToggle
   const historyLength = useStore((s) => s.history.length)
   const exportLayout = useStore((s) => s.exportLayout)
   const importLayout = useStore((s) => s.importLayout)
+  const selectedWidgetId = useStore((s) => s.selectedWidgetId)
+  const selectedIds = useStore((s) => s.selectedIds)
+  const setSelectedWidgetId = useStore((s) => s.setSelectedWidgetId)
+  const setSelectedIds = useStore((s) => s.setSelectedIds)
+  const duplicateWidget = useStore((s) => s.duplicateWidget)
+  const removeWidget = useStore((s) => s.removeWidget)
+  const toggleLockWidget = useStore((s) => s.toggleLockWidget)
+  const bringToFront = useStore((s) => s.bringToFront)
+  const sendToBack = useStore((s) => s.sendToBack)
+  const duplicateSelectedWidgets = useStore((s) => s.duplicateSelectedWidgets)
+  const removeSelectedWidgets = useStore((s) => s.removeSelectedWidgets)
   const isMobile = useMediaQuery('(max-width: 768px)')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const canUndo = historyIndex > 0
   const canRedo = historyIndex < historyLength - 1
+  const toast = useToast()
+
+  const hasSelection = selectedIds.length > 0 || !!selectedWidgetId
+  const multiSelect =
+    selectedIds.length > 1 ||
+    (selectedIds.length === 1 && !!selectedWidgetId && selectedIds[0] !== selectedWidgetId)
 
   const handleAdd = useCallback(
     (type: WidgetType) => {
       const rect = new DOMRect(0, 0, window.innerWidth, window.innerHeight)
       addWidget(type, window.innerWidth / 2, window.innerHeight / 2, rect, boardId)
+      toast.success('Widget added')
     },
-    [addWidget, boardId]
+    [addWidget, boardId, toast]
   )
 
   const handleExport = useCallback(() => {
@@ -51,58 +102,130 @@ export function Toolbar({ onToggleScheme, scheme, boardId, agentOpened, onToggle
     a.download = `widgetboard-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
-  }, [exportLayout])
+    toast.success('Layout exported')
+  }, [exportLayout, toast])
+
+  const handleUndo = useCallback(() => {
+    undo()
+    toast.info('Undo')
+  }, [undo, toast])
+  const handleRedo = useCallback(() => {
+    redo()
+    toast.info('Redo')
+  }, [redo, toast])
+
+  const handleToggleSnap = useCallback(() => {
+    toggleSnap()
+    toast.info(snapEnabled ? 'Snap disabled' : 'Snap enabled')
+  }, [toggleSnap, snapEnabled, toast])
+
+  const handleToggleCollision = useCallback(() => {
+    toggleCollision()
+    toast.info(collisionEnabled ? 'Collision disabled' : 'Collision enabled')
+  }, [toggleCollision, collisionEnabled, toast])
 
   const handleImport = useCallback(
     (file: File | null) => {
       if (!file) return
       const reader = new FileReader()
       reader.onload = () => {
-        const json = reader.result as string
-        importLayout(json)
+        importLayout(reader.result as string)
+        toast.success('Layout imported')
       }
+      reader.onerror = () => toast.error('Failed to import layout')
       reader.readAsText(file)
-      // Reset input so same file can be re-imported
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
+      if (fileInputRef.current) fileInputRef.current.value = ''
     },
-    [importLayout]
+    [importLayout, toast]
   )
 
-  return (
+  const handleClearSelection = useCallback(() => {
+    setSelectedWidgetId(null)
+    setSelectedIds([])
+  }, [setSelectedWidgetId, setSelectedIds])
+
+  const handleDuplicate = useCallback(() => {
+    if (multiSelect || selectedIds.length > 0) {
+      duplicateSelectedWidgets()
+      toast.success(`${selectedIds.length + (selectedWidgetId ? 1 : 0)} widgets duplicated`)
+      handleClearSelection()
+    } else if (selectedWidgetId) {
+      duplicateWidget(selectedWidgetId, boardId)
+      toast.success('Widget duplicated')
+    }
+  }, [
+    multiSelect,
+    selectedIds,
+    selectedWidgetId,
+    duplicateSelectedWidgets,
+    duplicateWidget,
+    boardId,
+    toast,
+    handleClearSelection,
+  ])
+
+  const selectionCount = useMemo(() => {
+    const s = new Set(selectedIds)
+    if (selectedWidgetId) s.add(selectedWidgetId)
+    return s.size
+  }, [selectedIds, selectedWidgetId])
+
+  const handleDelete = useCallback(() => {
+    if (multiSelect || selectedIds.length > 0) {
+      removeSelectedWidgets()
+      toast.success(`${selectionCount} widgets deleted`)
+      handleClearSelection()
+    } else if (selectedWidgetId) {
+      removeWidget(selectedWidgetId, boardId)
+      toast.success('Widget deleted')
+      setSelectedWidgetId(null)
+    }
+  }, [
+    multiSelect,
+    selectedIds,
+    selectedWidgetId,
+    selectionCount,
+    removeSelectedWidgets,
+    removeWidget,
+    boardId,
+    toast,
+    handleClearSelection,
+    setSelectedWidgetId,
+  ])
+
+  const renderDefaultActions = () => (
     <>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".json"
-        style={{ display: 'none' }}
-        onChange={(e) => handleImport(e.target.files?.[0] ?? null)}
-      />
-      <div
-        style={{
-          position: 'fixed',
-          bottom: isMobile ? 16 : 20,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 30,
-        }}
+      <Tooltip
+        label={editMode ? 'Switch to Use Mode (E)' : 'Switch to Edit Mode (E)'}
+        position="top"
+        withArrow
       >
-        <Group
-          gap={2}
-          px={isMobile ? 'sm' : 6}
-          py={isMobile ? 6 : 4}
-          className="wb-toolbar"
-          style={{
-            borderRadius: 'var(--wb-radius-lg)',
-          }}
+        <ActionIcon
+          variant={editMode ? 'light' : 'subtle'}
+          color={editMode ? 'violet' : 'gray'}
+          size="sm"
+          onClick={toggleEditMode}
         >
+          {editMode ? <IconPencil size={16} /> : <IconEye size={16} />}
+        </ActionIcon>
+      </Tooltip>
+
+      {editMode && (
+        <>
+          <div
+            style={{
+              width: 1,
+              height: 20,
+              backgroundColor: 'var(--wb-border-solid)',
+              margin: '0 4px',
+            }}
+          />
           <Tooltip label="Undo" position="top" withArrow>
             <ActionIcon
               variant="subtle"
               color="gray"
               size="sm"
-              onClick={undo}
+              onClick={handleUndo}
               disabled={!canUndo}
             >
               <IconArrowBackUp size={16} />
@@ -113,7 +236,7 @@ export function Toolbar({ onToggleScheme, scheme, boardId, agentOpened, onToggle
               variant="subtle"
               color="gray"
               size="sm"
-              onClick={redo}
+              onClick={handleRedo}
               disabled={!canRedo}
             >
               <IconArrowForwardUp size={16} />
@@ -121,7 +244,14 @@ export function Toolbar({ onToggleScheme, scheme, boardId, agentOpened, onToggle
           </Tooltip>
 
           {!isMobile && (
-            <div style={{ width: 1, height: 20, backgroundColor: 'var(--wb-border-solid)', margin: '0 4px' }} />
+            <div
+              style={{
+                width: 1,
+                height: 20,
+                backgroundColor: 'var(--wb-border-solid)',
+                margin: '0 4px',
+              }}
+            />
           )}
 
           {!isMobile && (
@@ -131,23 +261,33 @@ export function Toolbar({ onToggleScheme, scheme, boardId, agentOpened, onToggle
                   variant={snapEnabled ? 'light' : 'subtle'}
                   color={snapEnabled ? 'violet' : 'gray'}
                   size="sm"
-                  onClick={toggleSnap}
+                  onClick={handleToggleSnap}
                 >
                   <IconGridDots size={16} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label={collisionEnabled ? 'Collision: ON' : 'Collision: OFF'} position="top" withArrow>
+              <Tooltip
+                label={collisionEnabled ? 'Collision: ON' : 'Collision: OFF'}
+                position="top"
+                withArrow
+              >
                 <ActionIcon
                   variant={collisionEnabled ? 'light' : 'subtle'}
                   color={collisionEnabled ? 'violet' : 'gray'}
                   size="sm"
-                  onClick={toggleCollision}
+                  onClick={handleToggleCollision}
                 >
                   <IconShield size={16} />
                 </ActionIcon>
               </Tooltip>
-
-              <div style={{ width: 1, height: 20, backgroundColor: 'var(--wb-border-solid)', margin: '0 4px' }} />
+              <div
+                style={{
+                  width: 1,
+                  height: 20,
+                  backgroundColor: 'var(--wb-border-solid)',
+                  margin: '0 4px',
+                }}
+              />
             </>
           )}
 
@@ -180,51 +320,196 @@ export function Toolbar({ onToggleScheme, scheme, boardId, agentOpened, onToggle
                   <IconUpload size={16} />
                 </ActionIcon>
               </Tooltip>
+              <div
+                style={{
+                  width: 1,
+                  height: 20,
+                  backgroundColor: 'var(--wb-border-solid)',
+                  margin: '0 4px',
+                }}
+              />
+            </>
+          )}
+        </>
+      )}
 
-              <div style={{ width: 1, height: 20, backgroundColor: 'var(--wb-border-solid)', margin: '0 4px' }} />
+      {onToggleScheme && (
+        <Tooltip label={scheme === 'dark' ? 'Light mode' : 'Dark mode'} position="top" withArrow>
+          <ActionIcon variant="subtle" color="gray" size="sm" onClick={onToggleScheme}>
+            {scheme === 'dark' ? <IconSun size={16} /> : <IconMoon size={16} />}
+          </ActionIcon>
+        </Tooltip>
+      )}
+
+      {!isMobile && onOpenSettings && (
+        <Tooltip label="Settings" position="top" withArrow>
+          <ActionIcon variant="subtle" color="gray" size="sm" onClick={onOpenSettings}>
+            <IconSettings size={16} />
+          </ActionIcon>
+        </Tooltip>
+      )}
+    </>
+  )
+
+  const renderSelectionActions = () => (
+    <>
+      <Text size="xs" c="violet" fw={600} px={4} style={{ whiteSpace: 'nowrap' }}>
+        {selectionCount} selected
+      </Text>
+
+      <div
+        style={{ width: 1, height: 20, backgroundColor: 'var(--wb-border-solid)', margin: '0 4px' }}
+      />
+
+      <Tooltip label="Duplicate" position="top" withArrow>
+        <ActionIcon variant="subtle" color="gray" size="sm" onClick={handleDuplicate}>
+          <IconCopy size={16} />
+        </ActionIcon>
+      </Tooltip>
+      <Tooltip label="Delete" position="top" withArrow>
+        <ActionIcon variant="subtle" color="red" size="sm" onClick={handleDelete}>
+          <IconTrash size={16} />
+        </ActionIcon>
+      </Tooltip>
+
+      {!isMobile && selectedWidgetId && !multiSelect && (
+        <>
+          <div
+            style={{
+              width: 1,
+              height: 20,
+              backgroundColor: 'var(--wb-border-solid)',
+              margin: '0 4px',
+            }}
+          />
+          <Tooltip
+            label={
+              useStore.getState().boards[boardId ?? 'root']?.find((w) => w.id === selectedWidgetId)
+                ?.locked
+                ? 'Unlock'
+                : 'Lock'
+            }
+            position="top"
+            withArrow
+          >
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="sm"
+              onClick={() => {
+                toggleLockWidget(selectedWidgetId, boardId)
+                toast.info('Widget toggled lock')
+              }}
+            >
+              <IconLock size={16} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Bring to Front" position="top" withArrow>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="sm"
+              onClick={() => bringToFront(selectedWidgetId, boardId)}
+            >
+              <IconArrowUp size={16} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Send to Back" position="top" withArrow>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="sm"
+              onClick={() => sendToBack(selectedWidgetId, boardId)}
+            >
+              <IconArrowDown size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </>
+      )}
+
+      <div
+        style={{ width: 1, height: 20, backgroundColor: 'var(--wb-border-solid)', margin: '0 4px' }}
+      />
+      <Tooltip label="Clear selection" position="top" withArrow>
+        <ActionIcon variant="subtle" color="gray" size="sm" onClick={handleClearSelection}>
+          <IconX size={16} />
+        </ActionIcon>
+      </Tooltip>
+    </>
+  )
+
+  return (
+    <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        style={{ display: 'none' }}
+        onChange={(e) => handleImport(e.target.files?.[0] ?? null)}
+      />
+      <div
+        style={{
+          position: 'fixed',
+          bottom: isMobile ? 16 : 20,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 30,
+        }}
+      >
+        <Group
+          gap={2}
+          px={isMobile ? 'sm' : 6}
+          py={isMobile ? 6 : 4}
+          className="wb-toolbar"
+          role="toolbar"
+          aria-label={hasSelection ? 'Selection actions' : 'Canvas toolbar'}
+          style={{
+            borderRadius: 'var(--wb-radius-lg)',
+            transition: 'border-color 200ms ease, box-shadow 200ms ease',
+            borderColor: hasSelection ? 'var(--wb-accent)' : 'var(--wb-glass-border)',
+            boxShadow: hasSelection
+              ? 'var(--wb-shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 0 1px var(--wb-accent)'
+              : 'var(--wb-shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.04)',
+          }}
+        >
+          {hasSelection && !isMobile ? renderSelectionActions() : renderDefaultActions()}
+
+          {onOpenPalette && !isMobile && (
+            <>
+              <Tooltip label="Search commands (Ctrl+K)" position="top" withArrow>
+                <ActionIcon variant="subtle" color="gray" size="sm" onClick={onOpenPalette}>
+                  <IconSearch size={16} />
+                </ActionIcon>
+              </Tooltip>
+              {editMode && (
+                <div
+                  style={{
+                    width: 1,
+                    height: 20,
+                    backgroundColor: 'var(--wb-border-solid)',
+                    margin: '0 4px',
+                  }}
+                />
+              )}
             </>
           )}
 
-          {onToggleScheme && (
-            <Tooltip label={scheme === 'dark' ? 'Light mode' : 'Dark mode'} position="top" withArrow>
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                size="sm"
-                onClick={onToggleScheme}
+          {editMode && (
+            <div style={{ position: 'relative' }}>
+              <Button
+                leftSection={!isMobile ? <IconPlus size={14} /> : undefined}
+                variant="light"
+                color="violet"
+                size={isMobile ? 'compact-sm' : 'compact-sm'}
+                onClick={() => setMenuOpen(!menuOpen)}
               >
-                {scheme === 'dark' ? <IconSun size={16} /> : <IconMoon size={16} />}
-              </ActionIcon>
-            </Tooltip>
+                {isMobile ? <IconPlus size={16} /> : 'Add Widget'}
+              </Button>
+              {!isMobile && menuOpen && (
+                <WidgetMenu onSelect={handleAdd} onClose={() => setMenuOpen(false)} />
+              )}
+            </div>
           )}
-
-          {onToggleAgent && (
-            <Tooltip label={agentOpened ? 'Close Agent' : 'AI Agent'} position="top" withArrow>
-              <ActionIcon
-                variant={agentOpened ? 'light' : 'subtle'}
-                color={agentOpened ? 'violet' : 'gray'}
-                size="sm"
-                onClick={onToggleAgent}
-              >
-                <IconRobot size={16} />
-              </ActionIcon>
-            </Tooltip>
-          )}
-
-          <div style={{ position: 'relative' }}>
-            <Button
-              leftSection={!isMobile ? <IconPlus size={14} /> : undefined}
-              variant="light"
-              color="violet"
-              size={isMobile ? 'compact-xs' : 'compact-sm'}
-              onClick={() => setMenuOpen(!menuOpen)}
-            >
-              {isMobile ? <IconPlus size={16} /> : 'Add Widget'}
-            </Button>
-            {!isMobile && menuOpen && (
-              <WidgetMenu onSelect={handleAdd} onClose={() => setMenuOpen(false)} />
-            )}
-          </div>
         </Group>
       </div>
 

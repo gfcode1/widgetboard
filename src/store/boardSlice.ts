@@ -86,9 +86,7 @@ export const createBoardSlice: StateCreator<WidgetStore, [], [], BoardSlice> = (
           boards: {
             ...s.boards,
             [bid]: (s.boards[bid] ?? []).map((w) =>
-              w.id === boardWidget.id
-                ? { ...w, content: { ...w.content, title } }
-                : w
+              w.id === boardWidget.id ? { ...w, content: { ...w.content, title } } : w
             ),
           },
         }))

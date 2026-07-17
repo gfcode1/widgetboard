@@ -38,14 +38,13 @@ export function CanvasToolbar({ boardId = ROOT_BOARD_ID }: CanvasToolbarProps) {
   const handleAddGroup = () => {
     const pos = screenToCanvas(window.innerWidth / 2, window.innerHeight / 2)
     addGroup({
-      type: 'group',
       boardId,
       x: pos.x - 200,
       y: pos.y - 150,
       width: 400,
       height: 300,
       title: 'New Group',
-      color: GROUP_COLORS[Math.floor(Math.random() * GROUP_COLORS.length)],
+      color: GROUP_COLORS[Math.floor(Math.random() * GROUP_COLORS.length)]!,
       widgetIds: [],
       collapsed: false,
     })
@@ -55,7 +54,6 @@ export function CanvasToolbar({ boardId = ROOT_BOARD_ID }: CanvasToolbarProps) {
   const handleAddText = () => {
     const pos = screenToCanvas(window.innerWidth / 2, window.innerHeight / 2)
     addText({
-      type: 'text',
       boardId,
       x: pos.x - 100,
       y: pos.y - 20,
@@ -72,7 +70,6 @@ export function CanvasToolbar({ boardId = ROOT_BOARD_ID }: CanvasToolbarProps) {
   const handleAddArrow = () => {
     const pos = screenToCanvas(window.innerWidth / 2, window.innerHeight / 2)
     addArrow({
-      type: 'arrow',
       boardId,
       startX: pos.x - 100,
       startY: pos.y,
@@ -88,7 +85,6 @@ export function CanvasToolbar({ boardId = ROOT_BOARD_ID }: CanvasToolbarProps) {
   const handleAddShape = () => {
     const pos = screenToCanvas(window.innerWidth / 2, window.innerHeight / 2)
     addShape({
-      type: 'shape',
       boardId,
       shape: activeShape,
       x: pos.x - 75,
@@ -140,7 +136,9 @@ export function CanvasToolbar({ boardId = ROOT_BOARD_ID }: CanvasToolbarProps) {
         </Popover.Target>
         <Popover.Dropdown>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <Text size="sm" fw={600}>Add Element</Text>
+            <Text size="sm" fw={600}>
+              Add Element
+            </Text>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
               {tools.map((tool) => (
                 <Button
@@ -156,7 +154,9 @@ export function CanvasToolbar({ boardId = ROOT_BOARD_ID }: CanvasToolbarProps) {
               ))}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <Text size="xs" c="dimmed">Color</Text>
+              <Text size="xs" c="dimmed">
+                Color
+              </Text>
               <ColorInput
                 value={activeColor}
                 onChange={setActiveColor}
@@ -165,7 +165,9 @@ export function CanvasToolbar({ boardId = ROOT_BOARD_ID }: CanvasToolbarProps) {
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <Text size="xs" c="dimmed">Shape (for shapes)</Text>
+              <Text size="xs" c="dimmed">
+                Shape (for shapes)
+              </Text>
               <Group gap={4}>
                 <ActionIcon
                   variant={activeShape === 'rectangle' ? 'light' : 'subtle'}

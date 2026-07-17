@@ -10,8 +10,8 @@ export interface ExportSlice {
 
 export const createExportSlice: StateCreator<WidgetStore, [], [], ExportSlice> = (set, get) => ({
   exportLayout: () => {
-    const { boards } = get()
-    return JSON.stringify({ version: 2, boards }, null, 2)
+    const { boards, canvasElements } = get()
+    return JSON.stringify({ version: 2, boards, canvasElements }, null, 2)
   },
 
   importLayout: (json) => {
@@ -26,7 +26,16 @@ export const createExportSlice: StateCreator<WidgetStore, [], [], ExportSlice> =
         console.error('Invalid layout JSON')
         return
       }
-      set({ boards, selectedIds: [], currentBoardId: null, navigationStack: [] } as Partial<WidgetStore>)
+      const update: Partial<WidgetStore> = {
+        boards,
+        selectedIds: [],
+        currentBoardId: null,
+        navigationStack: [],
+      }
+      if (data.canvasElements && Array.isArray(data.canvasElements)) {
+        update.canvasElements = data.canvasElements
+      }
+      set(update as WidgetStore)
       get().forcePushHistory()
     } catch {
       console.error('Invalid layout JSON')
