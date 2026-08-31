@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 let globalTick = new Date()
-let listeners: Array<() => void> = []
+const listeners = new Set<() => void>()
 
 function tick() {
   globalTick = new Date()
@@ -16,17 +16,29 @@ function ensureRunning() {
   }
 }
 
+function stopIfIdle() {
+  if (listeners.size === 0 && intervalId !== null) {
+    clearInterval(intervalId)
+    intervalId = null
+  }
+}
+
 export function useGlobalTick(): Date {
-  const [, setTick] = useState(globalTick)
+  const [tickState, setTick] = useState(globalTick)
 
   useEffect(() => {
-    const listener = () => setTick(new Date())
-    listeners.push(listener)
+    const listener = () => setTick(new Date(globalTick.getTime()))
+    listeners.add(listener)
+    // Sync immediately in case tick happened between render and effect
+    setTick(new Date(globalTick.getTime()))
     ensureRunning()
     return () => {
-      listeners = listeners.filter((fn) => fn !== listener)
+      listeners.delete(listener)
+      stopIfIdle()
     }
   }, [])
 
-  return globalTick
+  // During render, if globalTick is newer than local state, use global
+  // This keeps StrictMode double-mount safe without tearing
+  return tickState.getTime() >= globalTick.getTime() ? tickState : globalTick
 }

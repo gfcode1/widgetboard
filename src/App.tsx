@@ -1,9 +1,11 @@
-import { useState, useCallback, lazy, Suspense } from 'react'
+import { useState, useCallback, useEffect, lazy, Suspense } from 'react'
 import { Box, Center, Loader } from '@mantine/core'
 import { Canvas } from './components/Canvas'
+import { CanvasErrorBoundary } from './components/CanvasErrorBoundary'
 import { Toolbar } from './components/Toolbar'
 import { Onboarding } from './components/Onboarding'
 import { CommandPalette } from './components/CommandPalette'
+import { AIChat } from './components/AIChat'
 import { Breadcrumb } from './components/Breadcrumb'
 import { Minimap } from './components/Minimap'
 import { ToastContainer } from './components/Toast'
@@ -29,6 +31,8 @@ function App({ onToggleScheme, scheme }: AppProps) {
   const [openBoardId, setOpenBoardId] = useState<string | null>(null)
   const [settingsOpened, setSettingsOpened] = useState(false)
   const [paletteOpened, setPaletteOpened] = useState(false)
+  const [aiChatOpened, setAiChatOpened] = useState(false)
+  const [pendingAIQuery, setPendingAIQuery] = useState<string>('')
 
   const handleOpenBoard = useCallback((boardId: string) => {
     setOpenBoardId(boardId)
@@ -36,6 +40,27 @@ function App({ onToggleScheme, scheme }: AppProps) {
 
   const handleCloseBoard = useCallback(() => {
     setOpenBoardId(null)
+  }, [])
+
+  const handleAskAI = useCallback((query: string) => {
+    setPendingAIQuery(query)
+    setAiChatOpened(true)
+  }, [])
+
+  const handleAIQueryConsumed = useCallback(() => {
+    setPendingAIQuery('')
+  }, [])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const isMod = e.metaKey || e.ctrlKey
+      if (isMod && e.shiftKey && e.key === 'A') {
+        e.preventDefault()
+        setAiChatOpened((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
   }, [])
 
   return (
@@ -73,9 +98,12 @@ function App({ onToggleScheme, scheme }: AppProps) {
         scheme={scheme}
         onOpenSettings={() => setSettingsOpened(true)}
         onOpenPalette={() => setPaletteOpened(true)}
+        onOpenAI={() => setAiChatOpened(true)}
       />
       <main id="canvas" role="main" aria-label="Widget canvas" style={{ flex: 1 }}>
-        <Canvas onOpenBoard={handleOpenBoard} />
+        <CanvasErrorBoundary>
+          <Canvas onOpenBoard={handleOpenBoard} />
+        </CanvasErrorBoundary>
       </main>
       <Breadcrumb />
       <Minimap />
@@ -84,6 +112,13 @@ function App({ onToggleScheme, scheme }: AppProps) {
         open={paletteOpened}
         onOpen={() => setPaletteOpened(true)}
         onClose={() => setPaletteOpened(false)}
+        onAskAI={handleAskAI}
+      />
+      <AIChat
+        open={aiChatOpened}
+        onClose={() => setAiChatOpened(false)}
+        initialQuery={pendingAIQuery}
+        onQueryConsumed={handleAIQueryConsumed}
       />
       <Suspense fallback={<ModalFallback />}>
         <ShortcutsModal />

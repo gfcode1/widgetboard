@@ -1,7 +1,11 @@
 import { useMemo, useCallback, useRef } from 'react'
 import { Paper } from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
 import { useStore, ROOT_BOARD_ID } from '../store/useStore'
-import type { WidgetType } from '../types'
+import { useShallow } from 'zustand/react/shallow'
+import type { Widget, WidgetType } from '../types'
+
+const EMPTY_WIDGETS: Widget[] = []
 
 const MINIMAP_SIZE = 120
 const MINIMAP_PADDING = 10
@@ -21,14 +25,17 @@ const WIDGET_COLORS: Partial<Record<WidgetType, string>> = {
 }
 
 export function Minimap() {
-  const widgets = useStore((s) => s.boards[s.currentBoardId ?? ROOT_BOARD_ID] ?? [])
+  const widgets = useStore(
+    useShallow((s) => s.boards[s.currentBoardId ?? ROOT_BOARD_ID] ?? EMPTY_WIDGETS)
+  )
   const canvasScale = useStore((s) => s.canvasScale)
   const canvasOffset = useStore((s) => s.canvasOffset)
   const setCanvasTransform = useStore((s) => s.setCanvasTransform)
   const canvasRef = useRef<HTMLDivElement>(null)
+  const isMobile = useMediaQuery('(max-width: 768px)')
 
   const bounds = useMemo(() => {
-    if (widgets.length === 0) return null
+    if (widgets.length === 0 || isMobile) return null
     let minX = Infinity,
       minY = Infinity,
       maxX = -Infinity,
@@ -56,7 +63,7 @@ export function Minimap() {
     maxY = Math.max(maxY, viewportBottom) + 50
 
     return { minX, minY, maxX, maxY, viewportLeft, viewportTop, viewportRight, viewportBottom }
-  }, [widgets, canvasOffset, canvasScale])
+  }, [widgets, canvasOffset, canvasScale, isMobile])
 
   const widgetRects = useMemo(() => {
     if (!bounds) return []

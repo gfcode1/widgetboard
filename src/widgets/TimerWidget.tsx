@@ -49,11 +49,17 @@ export const TimerWidget = memo(function TimerWidget({ widget }: Props) {
           laps: [],
         }
 
+  const contentRef = useRef(content)
+  contentRef.current = content
+
   const displayMs =
     content.mode === 'countdown' ? Math.max(0, content.target - content.elapsed) : content.elapsed
 
   useEffect(() => {
-    if (!content.running) return
+    if (!contentRef.current.running) {
+      lastTickRef.current = 0
+      return
+    }
     const now = tick.getTime()
     if (lastTickRef.current === 0) {
       lastTickRef.current = now
@@ -61,10 +67,12 @@ export const TimerWidget = memo(function TimerWidget({ widget }: Props) {
     }
     const delta = now - lastTickRef.current
     lastTickRef.current = now
-    updateWidget(widget.id, {
-      content: { ...content, elapsed: content.elapsed + delta },
+    const latest = contentRef.current
+    // Use getState to avoid stale closure loop on `content`
+    useStore.getState().updateWidget(widget.id, {
+      content: { ...latest, elapsed: latest.elapsed + delta },
     })
-  }, [tick])
+  }, [tick, widget.id])
 
   const toggleRun = useCallback(() => {
     lastTickRef.current = 0
@@ -113,7 +121,7 @@ export const TimerWidget = memo(function TimerWidget({ widget }: Props) {
         color="var(--mantine-color-teal-5)"
         widgetId={widget.id}
       />
-      <Stack align="center" justify="center" gap="xs" style={{ flex: 1, padding: 12 }}>
+      <Stack align="center" justify="center" gap="xs" style={{ flex: 1, padding: 10 }}>
         <Group gap={4}>
           <Button
             size="xs"

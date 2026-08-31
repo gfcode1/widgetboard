@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useMemo } from 'react'
-import { Group, Text, Button, ActionIcon, Tooltip } from '@mantine/core'
+import { Group, Text, Button, ActionIcon, Tooltip, Menu } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import {
   IconPlus,
@@ -14,6 +14,7 @@ import {
   IconCopy,
   IconTrash,
   IconLock,
+  IconSparkles,
   IconArrowUp,
   IconArrowDown,
   IconX,
@@ -21,9 +22,11 @@ import {
   IconSearch,
   IconPencil,
   IconEye,
+  IconDots,
 } from '@tabler/icons-react'
 import type { WidgetType } from '../types'
 import { useStore } from '../store/useStore'
+import { useShallow } from 'zustand/react/shallow'
 import { useToast } from './Toast'
 import { WidgetMenu } from './WidgetMenu'
 import { MobileWidgetSheet } from './MobileWidgetSheet'
@@ -34,6 +37,7 @@ interface ToolbarProps {
   boardId?: string
   onOpenSettings?: () => void
   onOpenPalette?: () => void
+  onOpenAI?: () => void
 }
 
 export function Toolbar({
@@ -42,16 +46,16 @@ export function Toolbar({
   boardId,
   onOpenSettings,
   onOpenPalette,
+  onOpenAI,
 }: ToolbarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [moreMenuOpened, setMoreMenuOpened] = useState(false)
   const addWidget = useStore((s) => s.addWidget)
-  const boards = useStore((s) => s.boards)
+  const widgetCount = useStore(
+    useShallow((s) => Object.values(s.boards).reduce((acc, arr) => acc + arr.length, 0))
+  )
   const editMode = useStore((s) => s.editMode)
   const toggleEditMode = useStore((s) => s.toggleEditMode)
-  const widgetCount = useMemo(
-    () => Object.values(boards).reduce((acc, arr) => acc + arr.length, 0),
-    [boards]
-  )
   const snapEnabled = useStore((s) => s.snapEnabled)
   const collisionEnabled = useStore((s) => s.collisionEnabled)
   const toggleSnap = useStore((s) => s.toggleSnap)
@@ -220,7 +224,7 @@ export function Toolbar({
               margin: '0 4px',
             }}
           />
-          <Tooltip label="Undo" position="top" withArrow>
+          <Tooltip label="Undo (Ctrl+Z)" position="top" withArrow>
             <ActionIcon
               variant="subtle"
               color="gray"
@@ -231,7 +235,7 @@ export function Toolbar({
               <IconArrowBackUp size={16} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Redo" position="top" withArrow>
+          <Tooltip label="Redo (Ctrl+Shift+Z)" position="top" withArrow>
             <ActionIcon
               variant="subtle"
               color="gray"
@@ -243,93 +247,14 @@ export function Toolbar({
             </ActionIcon>
           </Tooltip>
 
-          {!isMobile && (
-            <div
-              style={{
-                width: 1,
-                height: 20,
-                backgroundColor: 'var(--wb-border-solid)',
-                margin: '0 4px',
-              }}
-            />
-          )}
-
-          {!isMobile && (
-            <>
-              <Tooltip label={snapEnabled ? 'Snap: ON' : 'Snap: OFF'} position="top" withArrow>
-                <ActionIcon
-                  variant={snapEnabled ? 'light' : 'subtle'}
-                  color={snapEnabled ? 'violet' : 'gray'}
-                  size="sm"
-                  onClick={handleToggleSnap}
-                >
-                  <IconGridDots size={16} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip
-                label={collisionEnabled ? 'Collision: ON' : 'Collision: OFF'}
-                position="top"
-                withArrow
-              >
-                <ActionIcon
-                  variant={collisionEnabled ? 'light' : 'subtle'}
-                  color={collisionEnabled ? 'violet' : 'gray'}
-                  size="sm"
-                  onClick={handleToggleCollision}
-                >
-                  <IconShield size={16} />
-                </ActionIcon>
-              </Tooltip>
-              <div
-                style={{
-                  width: 1,
-                  height: 20,
-                  backgroundColor: 'var(--wb-border-solid)',
-                  margin: '0 4px',
-                }}
-              />
-            </>
-          )}
-
-          {!isMobile && widgetCount > 0 && (
-            <Text size="xs" c="dimmed" fw={500} px={4} style={{ whiteSpace: 'nowrap' }}>
-              {widgetCount}
-            </Text>
-          )}
-
-          {!isMobile && (
-            <>
-              <Tooltip label="Export layout" position="top" withArrow>
-                <ActionIcon
-                  variant="subtle"
-                  color="gray"
-                  size="sm"
-                  onClick={handleExport}
-                  disabled={widgetCount === 0}
-                >
-                  <IconDownload size={16} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label="Import layout" position="top" withArrow>
-                <ActionIcon
-                  variant="subtle"
-                  color="gray"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <IconUpload size={16} />
-                </ActionIcon>
-              </Tooltip>
-              <div
-                style={{
-                  width: 1,
-                  height: 20,
-                  backgroundColor: 'var(--wb-border-solid)',
-                  margin: '0 4px',
-                }}
-              />
-            </>
-          )}
+          <div
+            style={{
+              width: 1,
+              height: 20,
+              backgroundColor: 'var(--wb-border-solid)',
+              margin: '0 4px',
+            }}
+          />
         </>
       )}
 
@@ -341,7 +266,92 @@ export function Toolbar({
         </Tooltip>
       )}
 
-      {!isMobile && onOpenSettings && (
+      {!isMobile && editMode && (
+        <Menu
+          opened={moreMenuOpened}
+          onChange={setMoreMenuOpened}
+          position="top"
+          offset={8}
+          shadow="lg"
+          radius="md"
+          zIndex={60}
+          styles={{
+            dropdown: {
+              backgroundColor: 'var(--wb-surface-solid)',
+              border: '1px solid var(--wb-border-solid)',
+              boxShadow: 'var(--wb-shadow-lg)',
+              borderRadius: 'var(--wb-radius)',
+              padding: 4,
+              minWidth: 180,
+            },
+            item: {
+              borderRadius: 'var(--wb-radius-sm)',
+              fontSize: 13,
+              padding: '6px 10px',
+              color: 'var(--wb-text)',
+              '&:hover': { backgroundColor: 'var(--wb-surface-hover)' },
+            },
+          }}
+        >
+          <Menu.Target>
+            <Tooltip label="More options" position="top" withArrow>
+              <ActionIcon variant="subtle" color="gray" size="sm">
+                <IconDots size={16} />
+              </ActionIcon>
+            </Tooltip>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item
+              leftSection={<IconGridDots size={14} />}
+              onClick={handleToggleSnap}
+              rightSection={
+                <Text size="xs" c="dimmed">
+                  {snapEnabled ? 'ON' : 'OFF'}
+                </Text>
+              }
+            >
+              Snap to Grid
+            </Menu.Item>
+            <Menu.Item
+              leftSection={<IconShield size={14} />}
+              onClick={handleToggleCollision}
+              rightSection={
+                <Text size="xs" c="dimmed">
+                  {collisionEnabled ? 'ON' : 'OFF'}
+                </Text>
+              }
+            >
+              Collision Detection
+            </Menu.Item>
+            <Menu.Divider />
+            {widgetCount > 0 && (
+              <Menu.Item leftSection={<IconDownload size={14} />} onClick={handleExport}>
+                Export Layout
+              </Menu.Item>
+            )}
+            <Menu.Item
+              leftSection={<IconUpload size={14} />}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Import Layout
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item leftSection={<IconSparkles size={14} />} onClick={onOpenAI}>
+              AI Agent
+            </Menu.Item>
+            <Menu.Item leftSection={<IconSearch size={14} />} onClick={onOpenPalette}>
+              Command Palette
+            </Menu.Item>
+            {onOpenSettings && (
+              <Menu.Item leftSection={<IconSettings size={14} />} onClick={onOpenSettings}>
+                Settings
+              </Menu.Item>
+            )}
+          </Menu.Dropdown>
+        </Menu>
+      )}
+
+      {!isMobile && !editMode && onOpenSettings && (
         <Tooltip label="Settings" position="top" withArrow>
           <ActionIcon variant="subtle" color="gray" size="sm" onClick={onOpenSettings}>
             <IconSettings size={16} />
@@ -473,26 +483,6 @@ export function Toolbar({
           }}
         >
           {hasSelection && !isMobile ? renderSelectionActions() : renderDefaultActions()}
-
-          {onOpenPalette && !isMobile && (
-            <>
-              <Tooltip label="Search commands (Ctrl+K)" position="top" withArrow>
-                <ActionIcon variant="subtle" color="gray" size="sm" onClick={onOpenPalette}>
-                  <IconSearch size={16} />
-                </ActionIcon>
-              </Tooltip>
-              {editMode && (
-                <div
-                  style={{
-                    width: 1,
-                    height: 20,
-                    backgroundColor: 'var(--wb-border-solid)',
-                    margin: '0 4px',
-                  }}
-                />
-              )}
-            </>
-          )}
 
           {editMode && (
             <div style={{ position: 'relative' }}>
