@@ -50,12 +50,11 @@ describe('Toolbar', () => {
     expect(screen.getByRole('button', { name: /add widget/i })).toBeInTheDocument()
   })
 
-  it('renders search palette button when onOpenPalette is provided', () => {
-    const onOpenPalette = vi.fn()
-    render(<Toolbar onOpenPalette={onOpenPalette} />, { wrapper: Wrapper })
+  it('renders more options menu when in edit mode', () => {
+    render(<Toolbar />, { wrapper: Wrapper })
     const buttons = screen.getAllByRole('button')
-    const searchBtn = buttons.find((btn) => btn.querySelector('.tabler-icon-search'))
-    expect(searchBtn).toBeInTheDocument()
+    const moreBtn = buttons.find((btn) => btn.querySelector('.tabler-icon-dots'))
+    expect(moreBtn).toBeInTheDocument()
   })
 
   it('renders scheme toggle when onToggleScheme is provided', () => {
@@ -74,15 +73,9 @@ describe('Toolbar', () => {
     expect(moonBtn).toBeInTheDocument()
   })
 
-  it('does not render search palette button when onOpenPalette is not provided', () => {
-    render(<Toolbar />, { wrapper: Wrapper })
-    const buttons = screen.getAllByRole('button')
-    const searchBtn = buttons.find((btn) => btn.querySelector('.tabler-icon-search'))
-    expect(searchBtn).toBeUndefined()
-  })
-
-  it('renders settings button when onOpenSettings is provided', () => {
+  it('renders settings button in use mode when onOpenSettings is provided', () => {
     const onOpenSettings = vi.fn()
+    useStore.setState({ editMode: false })
     render(<Toolbar onOpenSettings={onOpenSettings} />, { wrapper: Wrapper })
     const buttons = screen.getAllByRole('button')
     const settingsBtn = buttons.find((btn) => btn.querySelector('.tabler-icon-settings'))

@@ -15,6 +15,7 @@ const SHORTCUTS: Shortcut[] = [
   { keys: ['Ctrl', 'D'], description: 'Duplicate widget' },
   { keys: ['Escape'], description: 'Deselect / Close menu' },
   { keys: ['Ctrl', 'K'], description: 'Command palette' },
+  { keys: ['Ctrl', 'Shift', 'A'], description: 'AI Agent' },
   { keys: ['Ctrl', '0'], description: 'Zoom to fit' },
   { keys: ['Scroll'], description: 'Zoom in/out' },
   { keys: ['Click + Drag'], description: 'Pan canvas' },

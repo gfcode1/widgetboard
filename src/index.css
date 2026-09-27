@@ -20,7 +20,7 @@
 
   /* ── Text ─────────────────────────────────────────── */
   --wb-text: #e4e4e7;
-  --wb-text-dimmed: #8b8b96;
+  --wb-text-dimmed: #9b9ba6;
 
   /* ── Radius ───────────────────────────────────────── */
   --wb-radius: 10px;
@@ -129,6 +129,9 @@ body {
   font-feature-settings: 'cv11', 'cv01';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition:
+    background-color 300ms ease,
+    color 300ms ease;
 }
 
 /* ── Scrollbar ─────────────────────────────────────── */
@@ -208,6 +211,18 @@ body {
   }
 }
 
+@keyframes empty-icon-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.8;
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -239,6 +254,15 @@ body {
   }
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ── Reduced Motion ────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -247,6 +271,17 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Empty State Icon ──────────────────────────────── */
+.wb-empty-icon {
+  animation: empty-icon-pulse 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wb-empty-icon {
+    animation: none;
   }
 }
 
@@ -345,15 +380,16 @@ body {
   border-color: var(--wb-accent) !important;
   box-shadow:
     0 0 0 1px var(--wb-accent),
-    var(--wb-shadow-md),
-    var(--wb-glow-accent) !important;
+    var(--wb-shadow-xl),
+    var(--wb-glow-accent-lg) !important;
+  transform: scale(1.01);
 }
 
 .wb-widget-card--selected {
   border-color: var(--wb-accent) !important;
   box-shadow:
     0 0 0 1px var(--wb-accent),
-    var(--wb-shadow) !important;
+    var(--wb-shadow-md) !important;
 }
 
 /* ── Resize Handles ────────────────────────────────── */
@@ -487,7 +523,7 @@ div:hover > .wb-resize-handle {
   }
 
   .wb-toolbar {
-    padding-bottom: env(safe-area-inset-bottom, 4px) !important;
+    padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 

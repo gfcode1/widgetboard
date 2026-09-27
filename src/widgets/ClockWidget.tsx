@@ -244,7 +244,7 @@ export const ClockWidget = memo(function ClockWidget({ widget }: Props) {
         style={{
           flex: 1,
           overflow: 'auto',
-          padding: 12,
+          padding: 10,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',

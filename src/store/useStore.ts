@@ -48,7 +48,7 @@ export const useStore = create<WidgetStore>()(
     }),
     {
       name: 'widgetboard-v3',
-      version: 5,
+      version: 6,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       storage: createIDBStorage() as any,
       migrate: (persisted: unknown, version: number | undefined) => {
@@ -75,6 +75,26 @@ export const useStore = create<WidgetStore>()(
                 ...el,
                 boardId: el.boardId ?? 'root',
               }))
+            : []
+          return {
+            ...data,
+            canvasElements: elements,
+          } as Partial<WidgetStore>
+        }
+        if (version < 5) {
+          // Migrate groups to include relativeWidgets
+          const elements = Array.isArray(data.canvasElements)
+            ? (data.canvasElements as Array<Record<string, unknown>>).map((el) => {
+                if (el.type === 'group' && !el.relativeWidgets) {
+                  const widgetIds = Array.isArray(el.widgetIds) ? el.widgetIds : []
+                  const relativeWidgets: Record<string, { relX: number; relY: number }> = {}
+                  for (const wid of widgetIds) {
+                    relativeWidgets[wid as string] = { relX: 0, relY: 0 }
+                  }
+                  return { ...el, relativeWidgets }
+                }
+                return el
+              })
             : []
           return {
             ...data,

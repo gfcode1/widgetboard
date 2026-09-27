@@ -1,4 +1,4 @@
-import { Center, Stack, Text, Group } from '@mantine/core'
+import { Center, Stack, Text, Group, Button } from '@mantine/core'
 import { IconKeyboard, IconPlus } from '@tabler/icons-react'
 
 interface EmptyBoardStateProps {
@@ -6,11 +6,12 @@ interface EmptyBoardStateProps {
   isRoot: boolean
 }
 
-export function EmptyBoardState({ isRoot }: EmptyBoardStateProps) {
+export function EmptyBoardState({ isRoot, onAddWidget }: EmptyBoardStateProps) {
   return (
     <Center h="100%" style={{ pointerEvents: 'auto' }}>
       <Stack align="center" gap="lg" p="xl">
         <div
+          className="wb-empty-icon"
           style={{
             width: 64,
             height: 64,
@@ -29,14 +30,24 @@ export function EmptyBoardState({ isRoot }: EmptyBoardStateProps) {
           </Text>
           <Text size="sm" c="dimmed" ta="center">
             {isRoot
-              ? 'Click the + button or press Ctrl+K to add your first widget'
+              ? 'Add your first widget to get started'
               : 'Add widgets to this board to get started'}
           </Text>
         </Stack>
-        <Group gap={6}>
+        <Group gap={8}>
+          <Button
+            variant="light"
+            color="violet"
+            size="sm"
+            radius="md"
+            leftSection={<IconPlus size={16} />}
+            onClick={onAddWidget}
+          >
+            Add Widget
+          </Button>
           <div
             style={{
-              padding: '4px 10px',
+              padding: '6px 12px',
               borderRadius: 'var(--wb-radius-sm)',
               backgroundColor: 'var(--wb-surface-hover)',
               border: '1px solid var(--wb-border)',
@@ -48,25 +59,6 @@ export function EmptyBoardState({ isRoot }: EmptyBoardStateProps) {
             <IconKeyboard size={14} color="var(--wb-accent)" />
             <Text size="xs" c="dimmed">
               Ctrl+K
-            </Text>
-          </div>
-          <Text size="xs" c="dimmed">
-            or
-          </Text>
-          <div
-            style={{
-              padding: '4px 10px',
-              borderRadius: 'var(--wb-radius-sm)',
-              backgroundColor: 'var(--wb-surface-hover)',
-              border: '1px solid var(--wb-border)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <IconPlus size={14} color="var(--wb-accent)" />
-            <Text size="xs" c="dimmed">
-              Add Widget
             </Text>
           </div>
         </Group>

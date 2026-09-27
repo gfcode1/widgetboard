@@ -85,7 +85,7 @@ export const PomodoroStatsWidget = memo(function PomodoroStatsWidget({ widget: _
         onToggleEdit={() => {}}
         icon={<IconChartBar size={12} />}
       />
-      <div style={{ flex: 1, overflow: 'auto', padding: 12 }}>
+      <div style={{ flex: 1, overflow: 'auto', padding: 10 }}>
         {totalSessions === 0 ? (
           <Text size="xs" c="dimmed" fs="italic" ta="center" py="md">
             Complete pomodoro sessions to see stats

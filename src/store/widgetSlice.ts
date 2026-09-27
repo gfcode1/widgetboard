@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
-import type { Widget, WidgetType } from '../types'
+import type { Widget, WidgetType, GroupElement } from '../types'
 import type { WidgetStore } from './useStore'
 import { ROOT_BOARD_ID } from './useStore'
 import { snapToGrid, findNonOverlappingPosition, defaultContent, defaultSize } from './utils'
@@ -11,6 +11,14 @@ function getActiveBoardId(state: WidgetStore): string {
 
 function getWidgetsForBoard(boards: Record<string, Widget[]>, boardId: string): Widget[] {
   return boards[boardId] ?? []
+}
+
+function findWidgetGroup(
+  canvasElements: WidgetStore['canvasElements'],
+  widgetId: string
+): GroupElement | undefined {
+  return canvasElements.find((e) => e.type === 'group' && e.widgetIds.includes(widgetId)) as
+    GroupElement | undefined
 }
 
 export interface WidgetSlice {
@@ -105,6 +113,13 @@ export const createWidgetSlice: StateCreator<WidgetStore, [], [], WidgetSlice> =
   removeWidget: (id, targetBoardId) => {
     const state = get()
     const boardId = targetBoardId ?? getActiveBoardId(state)
+
+    // Remove from group if widget is in one
+    const group = findWidgetGroup(state.canvasElements, id)
+    if (group) {
+      get().removeWidgetFromGroup(group.id, id)
+    }
+
     set((s) => ({
       boards: {
         ...s.boards,
@@ -140,14 +155,42 @@ export const createWidgetSlice: StateCreator<WidgetStore, [], [], WidgetSlice> =
       resolvedY = pos.y
     }
 
-    set((s) => ({
-      boards: {
-        ...s.boards,
-        [boardId]: (s.boards[boardId] ?? []).map((w) =>
-          w.id === id ? { ...w, x: resolvedX, y: resolvedY } : w
-        ),
-      },
-    }))
+    // Check if widget is in a group
+    const group = findWidgetGroup(state.canvasElements, id)
+    if (group) {
+      // Update relative position within group
+      const relX = resolvedX - group.x
+      const relY = resolvedY - group.y
+      set((s) => ({
+        boards: {
+          ...s.boards,
+          [boardId]: (s.boards[boardId] ?? []).map((w) =>
+            w.id === id ? { ...w, x: resolvedX, y: resolvedY } : w
+          ),
+        },
+        canvasElements: s.canvasElements.map((e) => {
+          if (e.id === group.id && e.type === 'group') {
+            return {
+              ...e,
+              relativeWidgets: {
+                ...e.relativeWidgets,
+                [id]: { relX, relY },
+              },
+            }
+          }
+          return e
+        }),
+      }))
+    } else {
+      set((s) => ({
+        boards: {
+          ...s.boards,
+          [boardId]: (s.boards[boardId] ?? []).map((w) =>
+            w.id === id ? { ...w, x: resolvedX, y: resolvedY } : w
+          ),
+        },
+      }))
+    }
     get().forcePushHistory()
   },
 
@@ -167,7 +210,14 @@ export const createWidgetSlice: StateCreator<WidgetStore, [], [], WidgetSlice> =
         ),
       },
     }))
-    get().forcePushHistory()
+
+    // Auto-resize group if widget is inside one
+    const group = findWidgetGroup(state.canvasElements, id)
+    if (group) {
+      get().updateGroupAutoResize(group.id)
+    } else {
+      get().forcePushHistory()
+    }
   },
 
   resizeWidgetWithPosition: (id, x, y, width, height, targetBoardId) => {
@@ -188,6 +238,28 @@ export const createWidgetSlice: StateCreator<WidgetStore, [], [], WidgetSlice> =
         ),
       },
     }))
+
+    // Update relative position and auto-resize group if widget is inside one
+    const group = findWidgetGroup(get().canvasElements, id)
+    if (group) {
+      const relX = finalX - group.x
+      const relY = finalY - group.y
+      set((s) => ({
+        canvasElements: s.canvasElements.map((e) => {
+          if (e.id === group.id && e.type === 'group') {
+            return {
+              ...e,
+              relativeWidgets: {
+                ...e.relativeWidgets,
+                [id]: { relX, relY },
+              },
+            }
+          }
+          return e
+        }),
+      }))
+      get().updateGroupAutoResize(group.id)
+    }
   },
 
   duplicateWidget: (id, targetBoardId) => {

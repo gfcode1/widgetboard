@@ -8,6 +8,18 @@ import {
   IconZoom,
   IconHandClick,
   IconKeyboard,
+  IconCheckbox,
+  IconNote,
+  IconClock,
+  IconStopwatch,
+  IconCalendar,
+  IconBookmark,
+  IconCloud,
+  IconSearch,
+  IconCode,
+  IconMessageCircle,
+  IconSticker,
+  IconTarget,
 } from '@tabler/icons-react'
 import { useStore } from '../store/useStore'
 import type { WidgetType } from '../types'
@@ -66,6 +78,36 @@ const TEMPLATES = [
     widgets: [],
   },
 ]
+
+const TEMPLATE_ICONS: Record<string, React.ReactNode> = {
+  todo: <IconCheckbox size={12} />,
+  note: <IconNote size={12} />,
+  clock: <IconClock size={12} />,
+  pomodoro: <IconStopwatch size={12} />,
+  calendar: <IconCalendar size={12} />,
+  bookmark: <IconBookmark size={12} />,
+  weather: <IconCloud size={12} />,
+  search: <IconSearch size={12} />,
+  snippet: <IconCode size={12} />,
+  quote: <IconMessageCircle size={12} />,
+  sticky: <IconSticker size={12} />,
+  habit: <IconTarget size={12} />,
+}
+
+const TEMPLATE_ICON_COLORS: Record<string, string> = {
+  todo: 'var(--mantine-color-green-4)',
+  note: 'var(--mantine-color-yellow-4)',
+  clock: 'var(--wb-accent)',
+  pomodoro: 'var(--mantine-color-red-4)',
+  calendar: 'var(--mantine-color-indigo-4)',
+  bookmark: 'var(--mantine-color-teal-4)',
+  weather: 'var(--mantine-color-blue-4)',
+  search: 'var(--mantine-color-orange-4)',
+  snippet: 'var(--mantine-color-cyan-4)',
+  quote: 'var(--mantine-color-pink-4)',
+  sticky: 'var(--mantine-color-yellow-3)',
+  habit: 'var(--mantine-color-red-3)',
+}
 
 const RECENT_KEY = 'widgetboard-recent'
 
@@ -272,6 +314,7 @@ export function Onboarding() {
                     '&:hover': {
                       backgroundColor: 'var(--wb-accent-subtle)',
                       borderColor: 'var(--wb-border-accent)',
+                      transform: 'translateY(-1px)',
                     },
                   },
                 }}
@@ -286,7 +329,36 @@ export function Onboarding() {
                       {t.widgets.length === 0 ? 'Empty canvas' : `${t.widgets.length} widgets`}
                     </Text>
                   </div>
-                  <IconChevronRight size={16} color="var(--wb-text-dimmed)" />
+                  <Group gap={4}>
+                    {t.widgets.length > 0 && (
+                      <Group gap={2}>
+                        {t.widgets.slice(0, 4).map((wType) => (
+                          <div
+                            key={wType}
+                            style={{
+                              width: 24,
+                              height: 24,
+                              borderRadius: 4,
+                              backgroundColor: 'var(--wb-surface)',
+                              border: '1px solid var(--wb-border)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: TEMPLATE_ICON_COLORS[wType] || 'var(--wb-accent)',
+                            }}
+                          >
+                            {TEMPLATE_ICONS[wType]}
+                          </div>
+                        ))}
+                        {t.widgets.length > 4 && (
+                          <Text size="xs" c="dimmed">
+                            +{t.widgets.length - 4}
+                          </Text>
+                        )}
+                      </Group>
+                    )}
+                    <IconChevronRight size={16} color="var(--wb-text-dimmed)" />
+                  </Group>
                 </Group>
               </Paper>
             ))}

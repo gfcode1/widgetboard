@@ -72,6 +72,22 @@ describe('elementsSlice', () => {
 
     it('adds widget to group', () => {
       const { addGroup, addWidgetToGroup } = useStore.getState()
+      // Set up a widget in the board
+      useStore.setState({
+        boards: {
+          root: [
+            {
+              id: 'widget-1',
+              type: 'note',
+              x: 50,
+              y: 50,
+              width: 200,
+              height: 150,
+              content: { type: 'note', text: '' },
+            },
+          ],
+        },
+      })
       const id = addGroup({
         x: 0,
         y: 0,
@@ -83,12 +99,32 @@ describe('elementsSlice', () => {
         widgetIds: [],
         boardId: 'root',
       })
-      addWidgetToGroup(id, 'widget-1')
+      addWidgetToGroup(id, 'widget-1', 10, 10)
       expect((useStore.getState().canvasElements[0]! as any).widgetIds).toContain('widget-1')
+      expect((useStore.getState().canvasElements[0]! as any).relativeWidgets['widget-1']).toEqual({
+        relX: 10,
+        relY: 10,
+      })
     })
 
     it('removes widget from group', () => {
       const { addGroup, addWidgetToGroup, removeWidgetFromGroup } = useStore.getState()
+      // Set up a widget in the board
+      useStore.setState({
+        boards: {
+          root: [
+            {
+              id: 'widget-1',
+              type: 'note',
+              x: 50,
+              y: 50,
+              width: 200,
+              height: 150,
+              content: { type: 'note', text: '' },
+            },
+          ],
+        },
+      })
       const id = addGroup({
         x: 0,
         y: 0,
@@ -100,9 +136,10 @@ describe('elementsSlice', () => {
         widgetIds: [],
         boardId: 'root',
       })
-      addWidgetToGroup(id, 'widget-1')
+      addWidgetToGroup(id, 'widget-1', 10, 10)
       removeWidgetFromGroup(id, 'widget-1')
       expect((useStore.getState().canvasElements[0]! as any).widgetIds).toHaveLength(0)
+      expect((useStore.getState().canvasElements[0]! as any).relativeWidgets).toEqual({})
     })
   })
 

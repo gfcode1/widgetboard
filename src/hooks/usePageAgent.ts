@@ -16,15 +16,19 @@ export interface ChatMessage {
 
 const STORAGE_KEY = 'pageagent-config'
 
+const DEMO_BASE_URL = 'https://page-ag-testing-ohftxirgbn.cn-shanghai.fcapp.run'
+const DEMO_MODEL = 'qwen3.5-plus'
+const DEMO_API_KEY = 'NA'
+
 export function getStoredConfig(): AgentConfig {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw)
   } catch {}
   return {
-    baseURL: import.meta.env.VITE_AI_ENDPOINT ?? '',
-    model: import.meta.env.VITE_AI_MODEL ?? '',
-    apiKey: '',
+    baseURL: import.meta.env.VITE_AI_ENDPOINT || DEMO_BASE_URL,
+    model: import.meta.env.VITE_AI_MODEL || DEMO_MODEL,
+    apiKey: import.meta.env.VITE_AI_API_KEY || DEMO_API_KEY,
   }
 }
 

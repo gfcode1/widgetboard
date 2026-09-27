@@ -10,11 +10,13 @@ interface CanvasElementsProps {
   scale: number
   boardId?: string
   selectedWidgetId?: string | null
+  dragOverGroupId?: string | null
 }
 
 export const CanvasElements = memo(function CanvasElements({
   scale,
   boardId = ROOT_BOARD_ID,
+  dragOverGroupId,
 }: CanvasElementsProps) {
   const allElements = useStore((s) => s.canvasElements)
   const elements = useMemo(
@@ -46,6 +48,7 @@ export const CanvasElements = memo(function CanvasElements({
                 scale={scale}
                 isSelected={isSelected}
                 onSelect={handleSelect}
+                isDragOver={dragOverGroupId === element.id}
               />
             )
           case 'text':

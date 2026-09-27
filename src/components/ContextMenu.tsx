@@ -7,8 +7,10 @@ import {
   IconLockOpen,
   IconArrowUp,
   IconArrowDown,
+  IconLayoutDashboard,
 } from '@tabler/icons-react'
 import { useStore, ROOT_BOARD_ID } from '../store/useStore'
+import type { GroupElement } from '../types'
 
 interface ContextMenuProps {
   x: number
@@ -24,11 +26,19 @@ export function ContextMenu({ x, y, widgetId, boardId, onClose }: ContextMenuPro
   const toggleLockWidget = useStore((s) => s.toggleLockWidget)
   const bringToFront = useStore((s) => s.bringToFront)
   const sendToBack = useStore((s) => s.sendToBack)
+  const moveWidgetFromGroup = useStore((s) => s.moveWidgetFromGroup)
   const widget = useStore((s) => s.boards[boardId ?? ROOT_BOARD_ID]?.find((w) => w.id === widgetId))
   const locked = widget?.locked ?? false
   const menuRef = useRef<HTMLDivElement>(null)
   const [focusIndex, setFocusIndex] = useState(0)
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([])
+
+  // Check if widget is in a group
+  const widgetGroup = useStore((s) =>
+    s.canvasElements.find(
+      (e): e is GroupElement => e.type === 'group' && e.widgetIds.includes(widgetId)
+    )
+  )
 
   const menuItems = [
     {
@@ -47,6 +57,18 @@ export function ContextMenu({ x, y, widgetId, boardId, onClose }: ContextMenuPro
         onClose()
       },
     },
+    ...(widgetGroup
+      ? [
+          {
+            label: 'Move out of group',
+            icon: IconLayoutDashboard,
+            action: () => {
+              moveWidgetFromGroup(widgetId)
+              onClose()
+            },
+          },
+        ]
+      : []),
     {
       label: 'Bring to Front',
       icon: IconArrowUp,

@@ -32,6 +32,12 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/ice.*\.somafm\.com\/.*/,
+            handler: 'NetworkOnly',
+          },
+        ],
       },
     }),
   ],

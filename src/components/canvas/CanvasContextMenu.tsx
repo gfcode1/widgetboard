@@ -1,7 +1,15 @@
 import { Paper, UnstyledButton, Group, Text } from '@mantine/core'
-import { IconTypography, IconShape, IconArrowRight, IconBoxMultiple } from '@tabler/icons-react'
+import {
+  IconTypography,
+  IconShape,
+  IconArrowRight,
+  IconBoxMultiple,
+  IconLayoutDashboard,
+  IconLetterT,
+} from '@tabler/icons-react'
 import { useStore, ROOT_BOARD_ID } from '../../store/useStore'
 import { GROUP_COLORS } from '../../store/elementsSlice'
+import type { GroupElement } from '../../types'
 
 interface CanvasContextMenuProps {
   x: number
@@ -24,7 +32,14 @@ export function CanvasContextMenu({
   const addShape = useStore((s) => s.addShape)
   const addArrow = useStore((s) => s.addArrow)
   const addGroup = useStore((s) => s.addGroup)
+  const ungroup = useStore((s) => s.ungroup)
 
+  const canvasElements = useStore((s) => s.canvasElements)
+  const groups = canvasElements.filter(
+    (e): e is GroupElement => e.type === 'group' && e.boardId === boardId
+  )
+
+  // Check if right-click was on a group element (for context)
   const handleAddText = () => {
     addText({
       boardId,
@@ -148,6 +163,48 @@ export function CanvasContextMenu({
           </Group>
         </UnstyledButton>
       ))}
+      {groups.length > 0 && (
+        <>
+          <div
+            style={{
+              height: 1,
+              backgroundColor: 'var(--wb-border)',
+              margin: '4px 8px',
+            }}
+          />
+          <Text size="xs" c="dimmed" fw={600} px="xs" pt={2} pb={4}>
+            Add to group
+          </Text>
+          {groups.map((g) => (
+            <UnstyledButton
+              key={g.id}
+              onClick={() => {
+                // This will be used when a widget is selected - handled in ContextMenu
+                window.dispatchEvent(
+                  new CustomEvent('add-selected-to-group', { detail: { groupId: g.id } })
+                )
+                onClose()
+              }}
+              p="xs"
+              w="100%"
+              style={{ borderRadius: 'var(--mantine-radius-md)' }}
+              styles={{
+                root: {
+                  transition: 'all 150ms ease',
+                  '&:hover': { backgroundColor: 'var(--wb-accent-subtle)' },
+                },
+              }}
+            >
+              <Group gap="xs">
+                <IconLetterT size={14} color="var(--wb-text-dimmed)" />
+                <Text size="sm" c="gray.3" fw={500} truncate>
+                  {g.title || 'Untitled'}
+                </Text>
+              </Group>
+            </UnstyledButton>
+          ))}
+        </>
+      )}
     </Paper>
   )
 }

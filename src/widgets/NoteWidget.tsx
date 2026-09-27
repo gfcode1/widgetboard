@@ -114,7 +114,7 @@ export const NoteWidget = memo(function NoteWidget({ widget }: Props) {
           ) : undefined
         }
       />
-      <div style={{ flex: 1, overflow: 'auto', padding: 12 }}>
+      <div style={{ flex: 1, overflow: 'auto', padding: 10 }}>
         {editing ? (
           <>
             <Group gap="xs" mb={8}>

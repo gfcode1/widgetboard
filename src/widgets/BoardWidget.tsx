@@ -80,7 +80,7 @@ export const BoardWidget = memo(function BoardWidget({ widget, onOpenBoard }: Pr
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: 12,
+          padding: 10,
           gap: 8,
         }}
       >

@@ -186,7 +186,7 @@ export const StickyWidget = memo(function StickyWidget({ widget }: Props) {
             </Tooltip>
           </Group>
         )}
-        <div style={{ flex: 1, overflow: 'auto', padding: 12 }}>
+        <div style={{ flex: 1, overflow: 'auto', padding: 10 }}>
           <Textarea
             value={content.text}
             onChange={(e) => handleChange(e.currentTarget.value)}

@@ -53,6 +53,7 @@ const PomodoroStatsWidget = lazy(() => import('../widgets/PomodoroStatsWidget'))
 const HabitWidget = lazy(() => import('../widgets/HabitWidget'))
 const TimerWidget = lazy(() => import('../widgets/TimerWidget'))
 const KanbanWidget = lazy(() => import('../widgets/KanbanWidget'))
+const SomaRadioWidget = lazy(() => import('../widgets/SomaRadioWidget'))
 
 interface WidgetProps {
   widget: WidgetType
@@ -96,6 +97,7 @@ const widgetComponents: Record<
   habit: HabitWidget,
   timer: TimerWidget,
   kanban: KanbanWidget,
+  somaradio: SomaRadioWidget,
 }
 
 function WidgetSkeleton({ width, height }: { width: number; height: number }) {

@@ -220,9 +220,12 @@ export const KanbanWidget = memo(function KanbanWidget({ widget }: Props) {
                   size="xs"
                   placeholder="+ card"
                   value={newCardText[col.id] || ''}
-                  onChange={(e) =>
-                    setNewCardText((prev) => ({ ...prev, [col.id]: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    const val = e.target?.value
+                    if (val !== undefined) {
+                      setNewCardText((prev) => ({ ...prev, [col.id]: val }))
+                    }
+                  }}
                   onKeyDown={(e) => e.key === 'Enter' && addCard(col.id)}
                   styles={{
                     input: {
@@ -252,7 +255,10 @@ export const KanbanWidget = memo(function KanbanWidget({ widget }: Props) {
               size="xs"
               placeholder="New column"
               value={newColumnTitle}
-              onChange={(e) => setNewColumnTitle(e.target.value)}
+              onChange={(e) => {
+                const val = e.target?.value
+                if (val !== undefined) setNewColumnTitle(val)
+              }}
               onKeyDown={(e) => e.key === 'Enter' && addColumn()}
               styles={{
                 input: {

@@ -481,7 +481,7 @@ export const TodoWidget = memo(function TodoWidget({ widget }: Props) {
           </div>
         </div>
       )}
-      <div style={{ flex: 1, overflow: 'auto', padding: 8 }}>
+      <div style={{ flex: 1, overflow: 'auto', padding: 10 }}>
         {filteredItems.length === 0 ? (
           <div
             style={{

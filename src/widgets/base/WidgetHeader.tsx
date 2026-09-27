@@ -1,5 +1,5 @@
-import { useState, memo } from 'react'
-import { Group, Text, ActionIcon, Menu } from '@mantine/core'
+import { useState, useRef, useEffect, memo } from 'react'
+import { Group, Text, ActionIcon, Menu, TextInput } from '@mantine/core'
 import {
   IconEdit,
   IconEye,
@@ -10,6 +10,7 @@ import {
   IconLockOpen,
   IconArrowUp,
   IconArrowDown,
+  IconPencil,
 } from '@tabler/icons-react'
 import { useStore } from '../../store/useStore'
 import { useToast } from '../../components/Toast'
@@ -40,11 +41,16 @@ export const WidgetHeader = memo(function WidgetHeader({
   const effectiveWidgetId = widgetId ?? ctx.widgetId
   const effectiveBoardId = boardId ?? ctx.boardId
   const [menuOpen, setMenuOpen] = useState(false)
+  const [editingName, setEditingName] = useState(false)
+  const [nameValue, setNameValue] = useState('')
+  const [hoverTitle, setHoverTitle] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
   const removeWidget = useStore((s) => s.removeWidget)
   const duplicateWidget = useStore((s) => s.duplicateWidget)
   const toggleLockWidget = useStore((s) => s.toggleLockWidget)
   const bringToFront = useStore((s) => s.bringToFront)
   const sendToBack = useStore((s) => s.sendToBack)
+  const updateWidget = useStore((s) => s.updateWidget)
   const widget = useStore((s) =>
     s.boards[effectiveBoardId]?.find((w) => w.id === effectiveWidgetId)
   )
@@ -53,6 +59,29 @@ export const WidgetHeader = memo(function WidgetHeader({
   const hasWidget = !!effectiveWidgetId && effectiveWidgetId !== ''
 
   const accentColor = color || 'var(--wb-accent)'
+  const displayName = widget?.name || title
+
+  useEffect(() => {
+    if (editingName) {
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    }
+  }, [editingName])
+
+  const startRenaming = () => {
+    setNameValue(widget?.name ?? '')
+    setEditingName(true)
+  }
+
+  const commitRename = () => {
+    const trimmed = nameValue.trim()
+    updateWidget(effectiveWidgetId, { name: trimmed || undefined }, effectiveBoardId)
+    setEditingName(false)
+  }
+
+  const cancelRename = () => {
+    setEditingName(false)
+  }
 
   return (
     <div
@@ -71,7 +100,12 @@ export const WidgetHeader = memo(function WidgetHeader({
           borderBottom: '1px solid var(--wb-border)',
         }}
       >
-        <Group gap={6}>
+        <Group
+          gap={6}
+          style={{ minWidth: 0, flex: 1 }}
+          onMouseEnter={() => setHoverTitle(true)}
+          onMouseLeave={() => setHoverTitle(false)}
+        >
           {icon && (
             <span
               style={{
@@ -79,19 +113,89 @@ export const WidgetHeader = memo(function WidgetHeader({
                 display: 'flex',
                 alignItems: 'center',
                 opacity: 0.9,
+                flexShrink: 0,
               }}
             >
               {icon}
             </span>
           )}
-          <Text
-            size="xs"
-            fw={600}
-            c="dimmed"
-            style={{ letterSpacing: '0.02em', textTransform: 'uppercase', fontSize: 10 }}
-          >
-            {title}
-          </Text>
+          {editingName ? (
+            <TextInput
+              ref={inputRef}
+              value={nameValue}
+              onChange={(e) => setNameValue(e.currentTarget.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitRename()
+                if (e.key === 'Escape') cancelRename()
+              }}
+              onBlur={commitRename}
+              variant="unstyled"
+              size="xs"
+              placeholder={title}
+              onClick={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => e.stopPropagation()}
+              styles={{
+                input: {
+                  padding: 0,
+                  height: 18,
+                  minHeight: 18,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: '0.02em',
+                  textTransform: 'uppercase',
+                  color: 'var(--wb-text)',
+                  backgroundColor: 'var(--wb-surface)',
+                  border: '1px solid var(--wb-accent)',
+                  borderRadius: 3,
+                },
+              }}
+            />
+          ) : (
+            <Text
+              size="xs"
+              fw={600}
+              c="dimmed"
+              truncate
+              onDoubleClick={(e) => {
+                e.stopPropagation()
+                startRenaming()
+              }}
+              style={{
+                letterSpacing: '0.02em',
+                textTransform: 'uppercase',
+                fontSize: 10,
+                cursor: hasWidget ? 'default' : undefined,
+                minWidth: 0,
+              }}
+            >
+              {displayName}
+            </Text>
+          )}
+          {hasWidget && !editingName && (
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size={14}
+              aria-label="Rename widget"
+              onClick={(e) => {
+                e.stopPropagation()
+                startRenaming()
+              }}
+              style={{
+                opacity: hoverTitle ? 0.6 : 0,
+                transition: 'opacity 150ms ease',
+                flexShrink: 0,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = '1'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = hoverTitle ? '0.6' : '0'
+              }}
+            >
+              <IconPencil size={10} />
+            </ActionIcon>
+          )}
         </Group>
         <Group gap={2}>
           {rightSlot}
@@ -101,13 +205,13 @@ export const WidgetHeader = memo(function WidgetHeader({
             size="xs"
             aria-label={editing ? 'Preview mode' : 'Edit mode'}
             onClick={onToggleEdit}
-            style={{ opacity: 0.4, transition: 'opacity 150ms ease' }}
+            style={{ opacity: 0.5, transition: 'opacity 150ms ease' }}
             onMouseEnter={(e) => {
               e.currentTarget.style.opacity = '1'
               e.currentTarget.style.backgroundColor = 'var(--wb-accent-subtle)'
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = '0.4'
+              e.currentTarget.style.opacity = '0.5'
               e.currentTarget.style.backgroundColor = 'transparent'
             }}
           >
@@ -147,7 +251,7 @@ export const WidgetHeader = memo(function WidgetHeader({
                   color="gray"
                   size="xs"
                   aria-label="Widget options"
-                  style={{ opacity: menuOpen ? 1 : 0.4, transition: 'opacity 150ms ease' }}
+                  style={{ opacity: menuOpen ? 1 : 0.5, transition: 'opacity 150ms ease' }}
                   onMouseEnter={(e) => {
                     if (!menuOpen) {
                       e.currentTarget.style.opacity = '1'
@@ -156,7 +260,7 @@ export const WidgetHeader = memo(function WidgetHeader({
                   }}
                   onMouseLeave={(e) => {
                     if (!menuOpen) {
-                      e.currentTarget.style.opacity = '0.4'
+                      e.currentTarget.style.opacity = '0.5'
                       e.currentTarget.style.backgroundColor = 'transparent'
                     }
                   }}

@@ -27,6 +27,7 @@ import {
   IconTarget,
   IconHourglass,
   IconLayoutColumns,
+  IconRadio,
 } from '@tabler/icons-react'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -52,6 +53,26 @@ export const CATEGORY_ORDER: WidgetCategory[] = [
   'finance',
   'data',
 ]
+
+export const CATEGORY_COLORS: Record<WidgetCategory, string> = {
+  productivity: 'violet',
+  time: 'blue',
+  media: 'orange',
+  utilities: 'green',
+  organization: 'teal',
+  finance: 'yellow',
+  data: 'pink',
+}
+
+export const CATEGORY_ICONS: Record<WidgetCategory, string> = {
+  productivity: 'IconCheckbox',
+  time: 'IconClock',
+  media: 'IconPhoto',
+  utilities: 'IconSettings',
+  organization: 'IconFolder',
+  finance: 'IconWallet',
+  data: 'IconChartBar',
+}
 
 export interface WidgetMeta {
   type: WidgetType
@@ -359,6 +380,16 @@ export const WIDGET_REGISTRY: WidgetMeta[] = [
         { id: 'col-2', title: 'Done', cards: [] },
       ],
     }),
+  },
+  {
+    type: 'somaradio',
+    label: 'Soma Radio',
+    icon: <IconRadio size={20} />,
+    description: 'Ascolta le stazioni radio di SomaFM',
+    category: 'media',
+    defaultWidth: 320,
+    defaultHeight: 240,
+    defaultContent: () => ({ type: 'somaradio', stationSlug: '', volume: 0.8 }),
   },
 ]
 

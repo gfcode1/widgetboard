@@ -25,8 +25,14 @@ export type WidgetType =
   | 'habit'
   | 'timer'
   | 'kanban'
+  | 'somaradio'
 
 export type CanvasElementType = 'group' | 'text' | 'arrow' | 'shape'
+
+export interface GroupWidgetRel {
+  relX: number
+  relY: number
+}
 
 export interface GroupElement {
   id: string
@@ -39,6 +45,7 @@ export interface GroupElement {
   title: string
   color: string
   widgetIds: string[]
+  relativeWidgets: Record<string, GroupWidgetRel>
   collapsed: boolean
   zIndex: number
 }
@@ -308,6 +315,12 @@ export interface KanbanContent {
   }>
 }
 
+export interface SomaRadioContent {
+  type: 'somaradio'
+  stationSlug: string
+  volume: number
+}
+
 export type WidgetContent =
   | NoteContent
   | ClockContent
@@ -335,6 +348,7 @@ export type WidgetContent =
   | HabitContent
   | TimerContent
   | KanbanContent
+  | SomaRadioContent
 
 export interface Widget {
   id: string
@@ -345,4 +359,5 @@ export interface Widget {
   height: number
   content: WidgetContent
   locked?: boolean
+  name?: string
 }

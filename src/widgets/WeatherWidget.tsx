@@ -384,7 +384,7 @@ export const WeatherWidget = memo(function WeatherWidget({ widget }: Props) {
           ) : undefined
         }
       />
-      <div style={{ flex: 1, overflow: 'auto', padding: 12 }}>
+      <div style={{ flex: 1, overflow: 'auto', padding: 10 }}>
         {editing ? (
           <Stack gap="xs">
             {content.locations.map((loc, i) => (

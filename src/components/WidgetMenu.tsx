@@ -1,11 +1,12 @@
 import { useCallback, useState, useMemo } from 'react'
-import { Paper, UnstyledButton, Group, Text, TextInput, Chip, ActionIcon } from '@mantine/core'
+import { Paper, UnstyledButton, Group, Text, TextInput, Badge, ActionIcon } from '@mantine/core'
 import { IconSearch, IconStar, IconStarFilled, IconClock } from '@tabler/icons-react'
 import type { WidgetType } from '../types'
 import {
   WIDGET_REGISTRY,
   CATEGORY_ORDER,
   CATEGORY_LABELS,
+  CATEGORY_COLORS,
   type WidgetCategory,
 } from '../widgets/registry'
 
@@ -163,21 +164,29 @@ export function WidgetMenu({ onSelect, onClose }: WidgetMenuProps) {
 
         {!filter.trim() && (
           <div style={{ padding: '0 8px 6px' }}>
-            <Chip.Group
-              value={selectedCat}
-              onChange={(v) => setSelectedCat((v || 'all') as WidgetCategory | 'all')}
-            >
-              <Group gap={4}>
-                <Chip value="all" size="xs" radius="sm">
-                  All
-                </Chip>
-                {CATEGORY_ORDER.map((cat) => (
-                  <Chip key={cat} value={cat} size="xs" radius="sm">
-                    {CATEGORY_LABELS[cat]}
-                  </Chip>
-                ))}
-              </Group>
-            </Chip.Group>
+            <Group gap={4} wrap="nowrap" style={{ overflowX: 'auto', paddingBottom: 2 }}>
+              <Badge
+                size="sm"
+                variant={selectedCat === 'all' ? 'filled' : 'light'}
+                color={selectedCat === 'all' ? 'violet' : 'gray'}
+                style={{ cursor: 'pointer', flexShrink: 0 }}
+                onClick={() => setSelectedCat('all')}
+              >
+                All
+              </Badge>
+              {CATEGORY_ORDER.map((cat) => (
+                <Badge
+                  key={cat}
+                  size="sm"
+                  variant={selectedCat === cat ? 'filled' : 'light'}
+                  color={selectedCat === cat ? CATEGORY_COLORS[cat] : 'gray'}
+                  style={{ cursor: 'pointer', flexShrink: 0 }}
+                  onClick={() => setSelectedCat(cat)}
+                >
+                  {CATEGORY_LABELS[cat]}
+                </Badge>
+              ))}
+            </Group>
           </div>
         )}
 
@@ -281,6 +290,7 @@ function WidgetCard({
   const labelParts = highlightMatch(item.label, query)
   const descParts = highlightMatch(item.description, query)
   const FavoriteIcon = isFavorite ? IconStarFilled : IconStar
+  const catColor = CATEGORY_COLORS[item.category] || 'violet'
 
   return (
     <UnstyledButton
@@ -302,7 +312,16 @@ function WidgetCard({
       }}
     >
       <Group gap="xs" align="flex-start" wrap="nowrap">
-        <div style={{ color: 'var(--wb-accent)', marginTop: 1, flexShrink: 0 }}>{item.icon}</div>
+        <div
+          style={{
+            color: `var(--mantine-color-${catColor}-4)`,
+            marginTop: 1,
+            flexShrink: 0,
+            opacity: 0.9,
+          }}
+        >
+          {item.icon}
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <Text size="xs" fw={500} c="gray.2">
             {labelParts.map((p, i) =>
